@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#060b14;--surface:#0d1526;--surface2:#131f35;--surface3:#1a2840;
+    --border:#1e3557;--accent:#326ce5;--accent2:#5b9ef9;
+    --green:#00e5a0;--yellow:#f5c542;--red:#ff5c5c;--purple:#a78bfa;--orange:#fb923c;
+    --text:#e2e8f0;--muted:#4a6080;--muted2:#64748b;
+  }
+  body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 60px;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(50,108,229,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(50,108,229,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  .app{position:relative;z-index:1;max-width:760px;margin:0 auto}
+
+  .header{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+  .logo{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--accent),#1a4fc4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;color:#fff;flex-shrink:0;box-shadow:0 0 24px rgba(50,108,229,0.35)}
+  h1{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+  .subtitle{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent2);margin-top:3px}
+
+  /* Phase + topics */
+  .phase-block{margin-bottom:18px}
+  .phase-label{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .phase-badge{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 9px;border-radius:3px;font-weight:700}
+  .pb-review{background:rgba(245,197,66,0.12);color:var(--yellow);border:1px solid rgba(245,197,66,0.25)}
+  .pb-s8{background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.25)}
+  .pb-s9{background:rgba(0,229,160,0.12);color:var(--green);border:1px solid rgba(0,229,160,0.25)}
+
+  .topic-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  @media(max-width:480px){.topic-grid{grid-template-columns:1fr}}
+
+  .topic-btn{padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;text-align:left;transition:all .18s}
+  .topic-btn:hover{border-color:var(--accent2);background:var(--surface2)}
+  .topic-btn.active{border-color:var(--accent);background:rgba(50,108,229,0.1);box-shadow:0 0 14px rgba(50,108,229,0.15)}
+  .tb-tag{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted2);margin-bottom:3px}
+  .tb-name{font-size:11px;font-weight:600;line-height:1.4;color:var(--text)}
+
+  /* Output area */
+  .output-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-top:6px;display:none}
+  .output-panel.show{display:block;animation:fadeUp .25s ease}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .out-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:gap}
+  .out-title{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:1px}
+
+  /* Context note input */
+  .note-row{display:flex;gap:8px;margin-bottom:12px;align-items:flex-start}
+  .note-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;transition:border-color .2s;resize:none;min-height:40px;line-height:1.6}
+  .note-input:focus{border-color:var(--accent)}
+  .note-input::placeholder{color:var(--muted)}
+  .note-btn{padding:8px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--muted2);font-family:'JetBrains Mono',monospace;font-size:10px;cursor:pointer;white-space:nowrap;transition:all .17s;flex-shrink:0}
+  .note-btn:hover{border-color:var(--accent2);color:var(--accent2)}
+
+  /* Prompt output */
+  .prompt-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.9;color:var(--text);white-space:pre-wrap;word-break:break-word;min-height:80px;max-height:420px;overflow-y:auto;position:relative}
+  .prompt-box::-webkit-scrollbar{width:4px}
+  .prompt-box::-webkit-scrollbar-track{background:transparent}
+  .prompt-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+  .copy-btn{width:100%;margin-top:10px;padding:11px;background:linear-gradient(135deg,var(--accent),#1a4fc4);border:none;border-radius:8px;color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 4px 18px rgba(50,108,229,0.3);letter-spacing:0.2px}
+  .copy-btn:hover{transform:translateY(-1px);box-shadow:0 6px 26px rgba(50,108,229,0.45)}
+  .copy-btn.copied{background:linear-gradient(135deg,var(--green),#00a372);box-shadow:0 4px 18px rgba(0,229,160,0.3)}
+
+  /* hint chips */
+  .hint-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .hint-chip{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 9px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);color:var(--muted2);cursor:pointer;transition:all .15s}
+  .hint-chip:hover{border-color:var(--accent2);color:var(--accent2)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">CKA</div>
+    <div>
+      <h1>Prompt Generator</h1>
+      <div class="subtitle">$ Chọn topic → copy prompt → paste vào AI bất kỳ</div>
+    </div>
+  </div>
+
+  <div id="topic-list"></div>
+
+  <!-- Output -->
+  <div class="output-panel" id="output-panel">
+    <div class="out-header">
+      <span class="out-title">PROMPT SẴN SÀNG ĐỂ COPY</span>
+    </div>
+
+    <!-- Quick notes -->
+    <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted2);margin-bottom:5px;">THÊM NOTE CÁ NHÂN (tuỳ chọn)</div>
+    <div class="hint-row" id="hint-chips"></div>
+    <div class="note-row">
+      <textarea class="note-input" id="note-input" placeholder="VD: hay nhầm Role vs ClusterRole, quên flag --data-dir khi restore etcd..."></textarea>
+      <button class="note-btn" onclick="applyNote()">+ Thêm</button>
+    </div>
+
+    <div class="prompt-box" id="prompt-box"></div>
+    <button class="copy-btn" id="copy-btn" onclick="copyPrompt()">📋 Copy prompt</button>
+  </div>
+</div>
+
+<script>
+const TOPICS = [
+  {phase:"review", pLabel:"PHASE 1 · Ôn S1–S7", pClass:"pb-review", items:[
+    {tag:"S1", name:"Architecture", desc:"Kubernetes Architecture — etcd, kube-apiserver, kube-scheduler, kube-controller-manager, kubelet, kube-proxy. Control plane vs worker node. Cách các component giao tiếp qua API server."},
+    {tag:"S2", name:"Core Concepts", desc:"Pods, ReplicaSets, Deployments, Namespaces, Services (ClusterIP/NodePort/LoadBalancer). Imperative vs Declarative. kubectl create/expose/run với --dry-run=client -o yaml."},
+    {tag:"S3", name:"Scheduling", desc:"Manual Scheduling (nodeName), Labels & Selectors, Taints & Tolerations, Node Affinity, Resource Limits, DaemonSets, Static Pods (/etc/kubernetes/manifests/), Multiple Schedulers."},
+    {tag:"S4", name:"Logging & Monitoring", desc:"kubectl top node/pod (metrics-server), kubectl logs -f, kubectl logs --previous, logs cho multi-container pod với -c flag."},
+    {tag:"S5", name:"App Lifecycle Management", desc:"Rolling Updates & Rollbacks (kubectl rollout), ConfigMaps, Secrets, Encrypting Secret Data at Rest (EncryptionConfiguration), Multi-Container Pods (sidecar/ambassador/adapter), Init Containers."},
+    {tag:"S6", name:"Cluster Maintenance", desc:"OS Upgrades (kubectl drain/cordon/uncordon), Cluster Upgrade với kubeadm (upgrade plan → upgrade apply → upgrade node), ETCD Backup & Restore (etcdctl snapshot save/restore, ETCDCTL_API=3, các flags: --endpoints --cacert --cert --key --data-dir)."},
+    {tag:"S7", name:"Security ⭐", desc:"TLS Certificates & Certificate API (CertificateSigningRequest, kubectl certificate approve), Kubeconfig (clusters/users/contexts), API Groups, RBAC (Role, ClusterRole, RoleBinding, ClusterRoleBinding, verbs), ServiceAccounts, Admission Controllers, Custom Admission Controllers, API Versions, Custom Resource Definitions (CRD)."},
+  ]},
+  {phase:"s8", pLabel:"PHASE 2 · Ôn S8", pClass:"pb-s8", items:[
+    {tag:"S8", name:"Storage", desc:"Storage in Docker, Volume Modes, Volumes (hostPath/emptyDir/configMap/secret), PersistentVolumes (accessModes: RWO/ROX/RWX, reclaimPolicy: Retain/Delete/Recycle), PersistentVolumeClaims (binding lifecycle), StorageClasses (dynamic provisioning, volumeBindingMode: WaitForFirstConsumer)."},
+  ]},
+  {phase:"s9", pLabel:"PHASE 3 · Học S9", pClass:"pb-s9", items:[
+    {tag:"S9·PRE", name:"Network Prerequisites", desc:"Switching & Routing (ip link/addr/route, default gateway), DNS (/etc/hosts, /etc/resolv.conf, nameserver, search domain), CoreDNS (Corefile, plugins), Network Namespaces (ip netns, veth pair, bridge, iptables), Docker Networking (bridge/host/none, docker0), CNI spec (ADD/DEL, plugin binary location /opt/cni/bin/, config /etc/cni/net.d/)."},
+    {tag:"S9·CORE", name:"Cluster & Pod Networking", desc:"Cluster Networking (Node IP, Pod CIDR, Service CIDR, port requirements), Pod Networking model (mỗi pod có IP riêng, veth pair → bridge → node routing), CNI in Kubernetes (kubelet --network-plugin, CNI config path), CNI Weave (weave-net DaemonSet, ipam range), IPAM."},
+    {tag:"S9·SVC", name:"Service Networking & DNS", desc:"Service Networking (kube-proxy modes: iptables/ipvs, clusterIP range, iptables rules), DNS format: <svc>.<ns>.svc.cluster.local và <ip-dashes>.<ns>.pod.cluster.local, CoreDNS in Kubernetes (ConfigMap coredns, forward plugin, kubectl -n kube-system)."},
+    {tag:"S9·ING", name:"Ingress & Gateway API 2025", desc:"Ingress (IngressClass, rules, paths, pathType: Prefix/Exact, TLS), Ingress Controller (NGINX ingress controller deployment), Annotations (nginx.ingress.kubernetes.io/rewrite-target), Gateway API 2025 (GatewayClass, Gateway, HTTPRoute — thay thế Ingress trong tương lai, có thể ra trong đề thi CKA mới)."},
+  ]},
+];
+
+const HINTS = {
+  "S1": ["Vẽ lại sơ đồ architecture","etcd là gì và lưu gì","Khi nào kubelet chạy static pod"],
+  "S2": ["Nhầm RS vs Deployment","Syntax imperative create/expose","DNS cross-namespace"],
+  "S3": ["Phân biệt Taint vs Affinity","Static pod path hay quên","DaemonSet scheduling"],
+  "S4": ["kubectl logs multi-container","metrics-server cài chưa"],
+  "S5": ["Nhầm ConfigMap vs Secret","Encrypt at Rest flow","Init container order"],
+  "S6": ["etcdctl flags hay thiếu","kubeadm upgrade sequence","drain vs cordon"],
+  "S7": ["Role vs ClusterRole scope","RBAC verbs","CertificateSigningRequest flow","Kubeconfig context switch"],
+  "S8": ["PVC không bind được PV","accessModes RWO vs RWX","StorageClass WaitForFirstConsumer"],
+  "S9·PRE": ["veth pair là gì","CNI plugin path hay quên","ip netns commands"],
+  "S9·CORE": ["Pod CIDR vs Service CIDR","CNI config file location","Weave DaemonSet"],
+  "S9·SVC": ["iptables vs ipvs mode","DNS format pod vs service","CoreDNS ConfigMap"],
+  "S9·ING": ["Ingress vs Service","rewrite-target annotation","Gateway API vs Ingress"],
+};
+
+let currentTopic = null;
+let currentNote = "";
+
+function renderTopics() {
+  const container = document.getElementById('topic-list');
+  TOPICS.forEach(phase => {
+    const block = document.createElement('div');
+    block.className = 'phase-block';
+    block.innerHTML = `<div class="phase-label"><span class="phase-badge ${phase.pClass}">${phase.pLabel}</span></div>
+    <div class="topic-grid">${phase.items.map(t =>
+      `<div class="topic-btn" id="tbtn-${t.tag}" onclick="selectTopic('${t.tag}')">
+        <div class="tb-tag">${t.tag}</div>
+        <div class="tb-name">${t.name}</div>
+      </div>`
+    ).join('')}</div>`;
+    container.appendChild(block);
+  });
+}
+
+function selectTopic(tag) {
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tbtn-'+tag).classList.add('active');
+
+  const all = TOPICS.flatMap(p => p.items);
+  currentTopic = all.find(t => t.tag === tag);
+  currentNote = "";
+  document.getElementById('note-input').value = "";
+
+  // render hint chips
+  const hints = HINTS[tag] || [];
+  const chipContainer = document.getElementById('hint-chips');
+  chipContainer.innerHTML = hints.map(h =>
+    `<span class="hint-chip" onclick="addHint('${h}')">${h}</span>`
+  ).join('');
+
+  document.getElementById('output-panel').classList.add('show');
+  renderPrompt();
+
+  // scroll to output
+  setTimeout(() => document.getElementById('output-panel').scrollIntoView({behavior:'smooth',block:'nearest'}), 100);
+}
+
+function addHint(text) {
+  const inp = document.getElementById('note-input');
+  inp.value = inp.value ? inp.value + '; ' + text : text;
+}
+
+function applyNote() {
+  currentNote = document.getElementById('note-input').value.trim();
+  renderPrompt();
+}
+
+function renderPrompt() {
+  if (!currentTopic) return;
+  const t = currentTopic;
+  const noteSection = currentNote ? `\n📌 Tôi đang bị nhầm / cần tập trung thêm vào: ${currentNote}\n` : '';
+
+  const prompt =
+`Bạn là giảng viên CKA (Certified Kubernetes Administrator). Hãy tạo 10 câu hỏi ôn tập cho topic sau, xen kẽ 3 dạng theo thứ tự: trắc nghiệm → câu hỏi mở → fill-in-the-blank (điền lệnh/YAML).
+
+📚 TOPIC: [${t.tag}] ${t.name}
+
+🔍 NỘI DUNG CẦN COVER:
+${t.desc}
+${noteSection}
+📋 YÊU CẦU FORMAT (10 câu, đúng thứ tự):
+Q1  [Trắc nghiệm]     — 4 lựa chọn A/B/C/D, chỉ 1 đáp án đúng
+Q2  [Câu hỏi mở]      — câu hỏi giải thích concept hoặc so sánh
+Q3  [Fill-in-blank]   — điền lệnh kubectl hoặc đoạn YAML còn thiếu
+Q4  [Trắc nghiệm]
+Q5  [Câu hỏi mở]
+Q6  [Fill-in-blank]
+Q7  [Trắc nghiệm]
+Q8  [Câu hỏi mở]
+Q9  [Fill-in-blank]
+Q10 [Trắc nghiệm]
+
+⚠️ QUAN TRỌNG — FORMAT ĐÁP ÁN:
+- Liệt kê HẾT 10 câu hỏi TRƯỚC (không kèm đáp án)
+- Sau đó in một dòng phân cách: ════════════ ĐÁP ÁN ════════════
+- Rồi mới in đáp án + giải thích từng câu theo số thứ tự
+
+Mục đích: người học đọc hết 10 câu, tự suy nghĩ, rồi mới kéo xuống xem đáp án.`;
+
+  document.getElementById('prompt-box').textContent = prompt;
+  // reset copy btn
+  const btn = document.getElementById('copy-btn');
+  btn.textContent = '📋 Copy prompt';
+  btn.classList.remove('copied');
+}
+
+function copyPrompt() {
+  const text = document.getElementById('prompt-box').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Đã copy! Paste vào AI bất kỳ';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 Copy prompt';
+      btn.classList.remove('copied');
+    }, 3000);
+  });
+}
+
+// Also re-render when note input changes live
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('note-input').addEventListener('input', () => {
+    currentNote = document.getElementById('note-input').value.trim();
+    renderPrompt();
+  });
+});
+
+renderTopics();
+</script>
+</body>
+</html>
