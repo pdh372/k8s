@@ -531,6 +531,426 @@ kubectl get pvc   # data-postgres-0 is the SAME PVC, reused`,
 		cleanup:
 			'kubectl delete statefulset postgres && kubectl delete service postgres && kubectl delete pvc data-postgres-0',
 	},
+	{
+		id: 'blue-green-canary',
+		title: 'Blue-green & canary releases',
+		scenario:
+			'Cut all traffic from v1 to v2 instantly by flipping a Service selector (blue-green), then shift traffic gradually by mixing replicas behind one Service (canary).',
+		difficulty: 'intermediate',
+		minutes: 20,
+		tags: ['Deployment', 'Service', 'blue-green', 'canary'],
+		prerequisites: ['A running Minikube cluster'],
+		whatYouLearn: [
+			'Blue-green cutover by switching a Service label selector',
+			'Instant rollback by flipping the selector back',
+			'Canary by sharing one selector and tuning replica ratios',
+		],
+		interviewAngle:
+			'\u201cHow do you release safely?\u201d Blue-green gives an instant, reversible cutover; canary exposes the new version to a slice of traffic first. Showing it is just labels + selectors proves real understanding.',
+		steps: [
+			{
+				title: 'Deploy blue (v1) and green (v2)',
+				body: 'Both are labelled app=web, but with different version labels.',
+				code: `kubectl apply -f - <<'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: web-blue }
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: web, version: blue } }
+  template:
+    metadata: { labels: { app: web, version: blue } }
+    spec:
+      containers:
+        - { name: web, image: stefanprodan/podinfo:6.5.3, ports: [{ containerPort: 9898 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: web-green }
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: web, version: green } }
+  template:
+    metadata: { labels: { app: web, version: green } }
+    spec:
+      containers:
+        - { name: web, image: stefanprodan/podinfo:6.5.4, ports: [{ containerPort: 9898 }] }
+EOF`,
+				lang: 'bash',
+			},
+			{
+				title: 'Point the Service at BLUE only, then test',
+				code: `kubectl apply -f - <<'EOF'
+apiVersion: v1
+kind: Service
+metadata: { name: web }
+spec:
+  selector: { app: web, version: blue }
+  ports: [{ port: 9898, targetPort: 9898 }]
+EOF
+kubectl run curl --image=curlimages/curl --restart=Never -it --rm -- \\
+  sh -c 'for i in $(seq 5); do curl -s web:9898/version; echo; done'`,
+				lang: 'bash',
+			},
+			{
+				title: 'Blue-green cutover: flip the selector to GREEN',
+				body: 'All traffic moves to v2 in one atomic change. Roll back with the same command using "blue".',
+				code: `kubectl patch service web -p '{"spec":{"selector":{"app":"web","version":"green"}}}'
+kubectl run curl --image=curlimages/curl --restart=Never -it --rm -- \\
+  sh -c 'for i in $(seq 5); do curl -s web:9898/version; echo; done'`,
+				lang: 'bash',
+			},
+			{
+				title: 'Canary: send a fraction of traffic to green',
+				body: 'Drop the version from the selector so the Service balances across BOTH deployments, then use replica counts as the traffic ratio (5 blue : 1 green \u2248 17% canary).',
+				code: `kubectl patch service web -p '{"spec":{"selector":{"app":"web"}}}'
+kubectl scale deployment web-blue --replicas=5
+kubectl scale deployment web-green --replicas=1
+kubectl run curl --image=curlimages/curl --restart=Never -it --rm -- \\
+  sh -c 'for i in $(seq 30); do curl -s web:9898/version; echo; done | sort | uniq -c'`,
+				lang: 'bash',
+			},
+		],
+		verify: [
+			'After the cutover every response reports version 6.5.4 (green); patch back to blue for an instant rollback.',
+			'In canary mode the uniq -c counts show mostly 6.5.3 with a few 6.5.4 \u2014 raise green replicas to shift more traffic.',
+		],
+		cleanup:
+			'kubectl delete deploy web-blue web-green && kubectl delete service web',
+	},
+	{
+		id: 'etcd-backup-restore',
+		title: 'Back up & restore etcd (cluster DR)',
+		scenario:
+			'etcd holds all cluster state. Take a point-in-time snapshot, inspect it, and understand the restore flow \u2014 the skill that saves a cluster from disaster.',
+		difficulty: 'advanced',
+		minutes: 25,
+		tags: ['etcd', 'backup', 'disaster recovery', 'CronJob'],
+		prerequisites: [
+			'A kubeadm-style Minikube cluster (the default docker driver)',
+			'etcd runs as a static Pod in kube-system',
+		],
+		whatYouLearn: [
+			'Take an etcd snapshot with the right endpoint + certs',
+			'Verify a snapshot with snapshot status',
+			'The restore procedure (new data dir) and how to automate backups',
+		],
+		interviewAngle:
+			'etcd backup/restore is THE disaster-recovery question for CKA and ops roles. They want the etcdctl flags (endpoints, cacert, cert, key) and the key fact that restore creates a NEW data dir you must point etcd at.',
+		steps: [
+			{
+				title: 'Find the etcd Pod name',
+				code: `ETCD=$(kubectl -n kube-system get pod -l component=etcd \\
+  -o jsonpath='{.items[0].metadata.name}')
+echo "$ETCD"`,
+				lang: 'bash',
+			},
+			{
+				title: 'Take a snapshot (etcdctl runs inside the etcd Pod)',
+				body: 'The etcd image ships etcdctl; recent versions default to API v3 so no ETCDCTL_API needed.',
+				code: `kubectl -n kube-system exec "$ETCD" -- etcdctl \\
+  --endpoints=https://127.0.0.1:2379 \\
+  --cacert=/var/lib/minikube/certs/etcd/ca.crt \\
+  --cert=/var/lib/minikube/certs/etcd/server.crt \\
+  --key=/var/lib/minikube/certs/etcd/server.key \\
+  snapshot save /var/lib/minikube/etcd/snapshot.db`,
+				lang: 'bash',
+			},
+			{
+				title: 'Verify the snapshot',
+				code: `kubectl -n kube-system exec "$ETCD" -- etcdctl \\
+  --write-out=table snapshot status /var/lib/minikube/etcd/snapshot.db`,
+				lang: 'bash',
+			},
+			{
+				title: 'Restore procedure (⚠️ destructive — read before running)',
+				body: 'Restore never overwrites live data in place: it writes a NEW data dir, then you point etcd at it. On kubeadm/Minikube you edit the etcd static-Pod manifest so the kubelet restarts etcd from the restored dir.',
+				code: `# On the node (minikube ssh), restore into a fresh directory:
+sudo etcdctl snapshot restore /var/lib/minikube/etcd/snapshot.db \\
+  --data-dir /var/lib/minikube/etcd-restore
+
+# Then edit /etc/kubernetes/manifests/etcd.yaml and change the
+# etcd-data hostPath volume to /var/lib/minikube/etcd-restore.
+# The kubelet detects the change and restarts etcd from the snapshot.`,
+				lang: 'bash',
+			},
+			{
+				title: 'Bonus: automate nightly backups with a CronJob',
+				body: 'Runs on the control-plane node with hostNetwork + the etcd certs mounted from the host.',
+				code: `kubectl apply -f - <<'EOF'
+apiVersion: batch/v1
+kind: CronJob
+metadata: { name: etcd-backup, namespace: kube-system }
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          hostNetwork: true
+          nodeSelector: { node-role.kubernetes.io/control-plane: "" }
+          tolerations: [{ operator: Exists }]
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: registry.k8s.io/etcd:3.5.15-0
+              command: ["etcdctl"]
+              args:
+                - "--endpoints=https://127.0.0.1:2379"
+                - "--cacert=/certs/ca.crt"
+                - "--cert=/certs/server.crt"
+                - "--key=/certs/server.key"
+                - "snapshot"
+                - "save"
+                - "/backup/etcd-snapshot.db"
+              volumeMounts:
+                - { name: certs, mountPath: /certs, readOnly: true }
+                - { name: backup, mountPath: /backup }
+          volumes:
+            - name: certs
+              hostPath: { path: /var/lib/minikube/certs/etcd }
+            - name: backup
+              hostPath: { path: /var/lib/minikube/etcd-backups }
+EOF`,
+				lang: 'bash',
+			},
+		],
+		verify: [
+			'snapshot status prints a table with a hash, revision and total key count — that means the snapshot is valid.',
+			'kubectl -n kube-system get cronjob etcd-backup shows the schedule; trigger it now with: kubectl -n kube-system create job --from=cronjob/etcd-backup manual-backup',
+			'In production you ship the snapshot OFF the node (to object storage) — a backup on the same disk as etcd is not a backup.',
+		],
+		cleanup:
+			'kubectl -n kube-system delete cronjob etcd-backup --ignore-not-found && kubectl -n kube-system delete job manual-backup --ignore-not-found',
+	},
+	{
+		id: 'ingress-tls',
+		title: 'HTTPS at the Ingress with a self-signed cert',
+		scenario:
+			'Serve an app over HTTPS by terminating TLS at the Ingress using a certificate stored in a Secret \u2014 exactly how real ingress TLS works.',
+		difficulty: 'intermediate',
+		minutes: 20,
+		tags: ['Ingress', 'TLS', 'Secret'],
+		prerequisites: [
+			'Ingress addon: minikube addons enable ingress',
+			'openssl installed locally',
+		],
+		whatYouLearn: [
+			'Create a kubernetes.io/tls Secret from a cert + key',
+			'Reference it in an Ingress tls block',
+			'Verify the TLS handshake end to end',
+		],
+		interviewAngle:
+			'\u201cHow does Ingress do TLS?\u201d The answer: a tls Secret referenced by the Ingress, and the controller terminates TLS then forwards plaintext to the Service. Being able to wire it up is a common real task.',
+		steps: [
+			{
+				title: 'Deploy an app to put behind HTTPS',
+				code: `kubectl create deployment web --image=stefanprodan/podinfo:6.5.4
+kubectl expose deployment web --port=9898`,
+				lang: 'bash',
+			},
+			{
+				title: 'Generate a self-signed cert for demo.local',
+				code: `openssl req -x509 -nodes -days 365 -newkey rsa:2048 \\
+  -keyout tls.key -out tls.crt \\
+  -subj "/CN=demo.local/O=demo" \\
+  -addext "subjectAltName=DNS:demo.local"`,
+				lang: 'bash',
+			},
+			{
+				title: 'Store the cert in a TLS Secret',
+				code: 'kubectl create secret tls demo-tls --cert=tls.crt --key=tls.key',
+				lang: 'bash',
+			},
+			{
+				title: 'Create the Ingress with a tls block',
+				code: `kubectl apply -f - <<'EOF'
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: web }
+spec:
+  tls:
+    - hosts: [demo.local]
+      secretName: demo-tls
+  rules:
+    - host: demo.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: web, port: { number: 9898 } }
+EOF
+echo "$(minikube ip)  demo.local" | sudo tee -a /etc/hosts`,
+				lang: 'bash',
+			},
+			{
+				title: 'Test HTTPS',
+				body: '-k skips trust (self-signed); --cacert tls.crt validates against your own cert.',
+				code: `curl -k https://demo.local/
+curl --cacert tls.crt https://demo.local/version`,
+				lang: 'bash',
+			},
+		],
+		verify: [
+			'curl -kv https://demo.local shows a TLS handshake and the app response.',
+			'The served certificate has CN=demo.local — the one you created, loaded from the Secret.',
+		],
+		cleanup:
+			'kubectl delete ingress web && kubectl delete secret demo-tls && kubectl delete deployment web && kubectl delete service web && rm -f tls.key tls.crt',
+	},
+	{
+		id: 'configmap-hot-reload',
+		title: 'ConfigMap hot-reload (volume vs env)',
+		scenario:
+			'Change app config without rebuilding an image \u2014 and learn the gotcha: a mounted ConfigMap updates live, but env vars from a ConfigMap do NOT.',
+		difficulty: 'intermediate',
+		minutes: 15,
+		tags: ['ConfigMap', 'volume', 'hot-reload'],
+		prerequisites: ['A running Minikube cluster'],
+		whatYouLearn: [
+			'Mount a ConfigMap as a volume and as env vars',
+			'Volume-mounted config refreshes live (~1 min); env vars are frozen at start',
+			'Use rollout restart to pick up env changes',
+		],
+		interviewAngle:
+			'\u201cIf you edit a ConfigMap, does the Pod see it?\u201d Volume mount: yes, after the kubelet sync (~1 min). Env var: no \u2014 you must restart the Pod. This nuance is a frequent trick question.',
+		steps: [
+			{
+				title: 'Create a ConfigMap',
+				code: `kubectl create configmap app-config --from-literal=greeting='hello v1'`,
+				lang: 'bash',
+			},
+			{
+				title: 'Deploy a Pod that consumes it BOTH ways',
+				code: `kubectl apply -f - <<'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: config-demo }
+spec:
+  selector: { matchLabels: { app: config-demo } }
+  template:
+    metadata: { labels: { app: config-demo } }
+    spec:
+      containers:
+        - name: app
+          image: busybox
+          command: ["sh", "-c", "sleep 3600"]
+          env:
+            - name: GREETING
+              valueFrom: { configMapKeyRef: { name: app-config, key: greeting } }
+          volumeMounts:
+            - { name: cfg, mountPath: /config }
+      volumes:
+        - name: cfg
+          configMap: { name: app-config }
+EOF
+kubectl rollout status deployment/config-demo`,
+				lang: 'bash',
+			},
+			{
+				title: 'Read both sources (should show v1)',
+				code: `kubectl exec deploy/config-demo -- cat /config/greeting; echo
+kubectl exec deploy/config-demo -- printenv GREETING`,
+				lang: 'bash',
+			},
+			{
+				title: 'Update the ConfigMap to v2',
+				code: `kubectl create configmap app-config --from-literal=greeting='hello v2' \\
+  --dry-run=client -o yaml | kubectl apply -f -`,
+				lang: 'bash',
+			},
+			{
+				title: 'Wait ~60s, then read again',
+				body: 'The mounted FILE now shows v2; the ENV VAR is still v1.',
+				code: `sleep 70
+kubectl exec deploy/config-demo -- cat /config/greeting; echo   # hello v2
+kubectl exec deploy/config-demo -- printenv GREETING            # still hello v1`,
+				lang: 'bash',
+			},
+			{
+				title: 'Restart to refresh the env var',
+				code: `kubectl rollout restart deployment/config-demo
+kubectl rollout status deployment/config-demo
+kubectl exec deploy/config-demo -- printenv GREETING            # now hello v2`,
+				lang: 'bash',
+			},
+		],
+		verify: [
+			'After the update the mounted file becomes "hello v2" with no restart; the env var stays "hello v1".',
+			'Only after rollout restart does the env var become "hello v2".',
+		],
+		cleanup:
+			'kubectl delete deployment config-demo && kubectl delete configmap app-config',
+	},
+	{
+		id: 'scheduling-taints-affinity',
+		title: 'Steer Pods with taints, tolerations & affinity',
+		scenario:
+			'Reserve a node for special workloads so ordinary Pods stay off it, and pull the right Pods onto it \u2014 the core of real scheduling control.',
+		difficulty: 'intermediate',
+		minutes: 20,
+		tags: ['taints', 'tolerations', 'node affinity', 'scheduling'],
+		prerequisites: [
+			'A 2-node cluster so placement is observable:',
+			'minikube start --nodes 2',
+		],
+		whatYouLearn: [
+			'Taint a node so untolerated Pods avoid it (NoSchedule)',
+			'Add a toleration so a Pod is allowed onto it',
+			'Use nodeAffinity to REQUIRE placement on a labelled node',
+		],
+		interviewAngle:
+			'The classic distinction: taints REPEL from the node side; affinity ATTRACTS from the Pod side. A toleration only permits placement \u2014 it does not force it; that is what nodeAffinity is for.',
+		steps: [
+			{
+				title: 'Label and taint the second node',
+				code: `kubectl label node minikube-m02 tier=gpu
+kubectl taint node minikube-m02 dedicated=gpu:NoSchedule
+kubectl describe node minikube-m02 | grep -A2 Taints`,
+				lang: 'bash',
+			},
+			{
+				title: 'Deploy a normal app — it avoids the tainted node',
+				code: `kubectl create deployment normal --image=nginx --replicas=4
+kubectl get pods -l app=normal -o wide   # all on minikube (node 1), none on m02`,
+				lang: 'bash',
+			},
+			{
+				title: 'Deploy a workload that tolerates the taint AND requires the node',
+				body: 'The toleration lets it onto m02; the nodeAffinity forces it there.',
+				code: `kubectl apply -f - <<'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: gpu-app }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: gpu-app } }
+  template:
+    metadata: { labels: { app: gpu-app } }
+    spec:
+      tolerations:
+        - { key: dedicated, operator: Equal, value: gpu, effect: NoSchedule }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - { key: tier, operator: In, values: [gpu] }
+      containers:
+        - { name: app, image: nginx }
+EOF
+kubectl get pods -l app=gpu-app -o wide   # both on minikube-m02`,
+				lang: 'bash',
+			},
+		],
+		verify: [
+			'kubectl get pods -o wide: the "normal" Pods are all on node 1; the "gpu-app" Pods are on minikube-m02.',
+			'Remove just the toleration OR the affinity and re-apply to see how each part changes placement.',
+		],
+		cleanup:
+			'kubectl delete deploy normal gpu-app && kubectl taint node minikube-m02 dedicated=gpu:NoSchedule- && kubectl label node minikube-m02 tier-',
+	},
 ];
 
 export const LAB_TAGS = Array.from(new Set(LABS.flatMap(l => l.tags))).sort();
