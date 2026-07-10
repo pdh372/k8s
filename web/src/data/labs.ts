@@ -951,6 +951,231 @@ kubectl get pods -l app=gpu-app -o wide   # both on minikube-m02`,
 		cleanup:
 			'kubectl delete deploy normal gpu-app && kubectl taint node minikube-m02 dedicated=gpu:NoSchedule- && kubectl label node minikube-m02 tier-',
 	},
+	{
+		id: 'jobs-parallelism',
+		title: 'Batch work with Jobs & parallelism',
+		scenario:
+			'Run a batch workload to completion — process a fixed number of work items across several Pods in parallel, with retries and auto-cleanup.',
+		difficulty: 'intermediate',
+		minutes: 15,
+		tags: ['Job', 'parallelism', 'batch'],
+		prerequisites: ['A running Minikube cluster'],
+		whatYouLearn: [
+			'completions vs parallelism',
+			'backoffLimit for retries and ttlSecondsAfterFinished for cleanup',
+			'Indexed Jobs where each Pod gets a unique shard number',
+		],
+		interviewAngle:
+			'\u201cDeployment vs Job?\u201d A Deployment keeps Pods running forever; a Job runs Pods to completion. Knowing completions/parallelism/backoffLimit and Indexed mode proves you understand batch workloads.',
+		steps: [
+			{
+				title: 'Run a parallel Job: 6 items, 2 at a time',
+				code: `kubectl apply -f - <<'EOF'
+apiVersion: batch/v1
+kind: Job
+metadata: { name: batch }
+spec:
+  completions: 6
+  parallelism: 2
+  backoffLimit: 4
+  ttlSecondsAfterFinished: 120
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: work
+          image: busybox
+          command: ["sh", "-c", "echo processing on $(hostname); sleep 5"]
+EOF`,
+				lang: 'bash',
+			},
+			{
+				title: 'Watch Pods run two at a time until 6 complete',
+				code: `kubectl get pods -l job-name=batch -w
+# in another view:
+kubectl get job batch   # COMPLETIONS climbs to 6/6`,
+				lang: 'bash',
+			},
+			{
+				title: 'Indexed Job — each Pod knows its own shard',
+				body: 'completionMode: Indexed injects JOB_COMPLETION_INDEX (0..N-1), so each Pod can own a distinct slice of the work.',
+				code: `kubectl apply -f - <<'EOF'
+apiVersion: batch/v1
+kind: Job
+metadata: { name: shards }
+spec:
+  completions: 4
+  parallelism: 4
+  completionMode: Indexed
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: work
+          image: busybox
+          command: ["sh", "-c", "echo I am shard $JOB_COMPLETION_INDEX; sleep 3"]
+EOF
+kubectl wait --for=condition=complete job/shards --timeout=60s
+kubectl logs -l job-name=shards --prefix | sort`,
+				lang: 'bash',
+			},
+		],
+		verify: [
+			'kubectl get job batch shows COMPLETIONS 6/6; only 2 Pods ran at any moment.',
+			'The shards Job logs print "I am shard 0/1/2/3" — one unique index per Pod.',
+		],
+		cleanup: 'kubectl delete job batch shards --ignore-not-found',
+	},
+	{
+		id: 'pdb-drain',
+		title: 'Protect availability during a node drain (PDB)',
+		scenario:
+			'Drain a node for maintenance without letting your app dip below a safe number of replicas — a PodDisruptionBudget blocks disruptive evictions.',
+		difficulty: 'advanced',
+		minutes: 20,
+		tags: ['PodDisruptionBudget', 'drain', 'availability'],
+		prerequisites: [
+			'A 2-node cluster so Pods can move during a drain:',
+			'minikube start --nodes 2',
+		],
+		whatYouLearn: [
+			'Set a PDB with minAvailable',
+			'How kubectl drain evicts Pods while respecting the PDB',
+			'When a PDB blocks a drain entirely',
+		],
+		interviewAngle:
+			'\u201cHow do you keep an app available during node maintenance?\u201d A PDB. The subtlety they probe: a PDB only guards VOLUNTARY disruptions (drain / the eviction API), not a node crash.',
+		steps: [
+			{
+				title: 'Deploy 3 replicas and a PDB requiring 2 to stay up',
+				code: `kubectl create deployment web --image=stefanprodan/podinfo:6.5.4 --replicas=3
+kubectl apply -f - <<'EOF'
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: { name: web-pdb }
+spec:
+  minAvailable: 2
+  selector: { matchLabels: { app: web } }
+EOF
+kubectl get pods -l app=web -o wide   # note which node each is on`,
+				lang: 'bash',
+			},
+			{
+				title: 'Drain a worker node — the PDB paces the eviction',
+				body: 'Drain evicts Pods one at a time; it will not drop below minAvailable=2, so the Deployment reschedules onto the other node between evictions.',
+				code: `kubectl drain minikube-m02 --ignore-daemonsets --delete-emptydir-data
+kubectl get pods -l app=web -o wide   # all Pods now on node 1, none lost`,
+				lang: 'bash',
+			},
+			{
+				title: 'Uncordon, then make the PDB BLOCK a drain',
+				body: 'With 2 replicas and minAvailable: 2, evicting even one Pod would violate the budget — so drain refuses.',
+				code: `kubectl uncordon minikube-m02
+kubectl scale deployment web --replicas=2
+kubectl get pdb web-pdb        # ALLOWED DISRUPTIONS: 0
+kubectl drain minikube-m02 --ignore-daemonsets --delete-emptydir-data --timeout=20s
+# -> "Cannot evict pod ... would violate the pod's disruption budget."`,
+				lang: 'bash',
+			},
+		],
+		verify: [
+			'During the first drain, kubectl get pdb shows ALLOWED DISRUPTIONS \u2265 1 and no downtime.',
+			'After scaling to 2 with minAvailable 2, the drain is refused with the disruption-budget message.',
+		],
+		cleanup:
+			'kubectl uncordon minikube-m02 ; kubectl delete deployment web && kubectl delete pdb web-pdb',
+	},
+	{
+		id: 'hpa-custom-metrics',
+		title: 'Autoscale on custom metrics (requests/sec)',
+		scenario:
+			'Scale on a business signal like HTTP requests-per-second instead of CPU, by exposing app metrics to the HPA through the custom metrics API.',
+		difficulty: 'advanced',
+		minutes: 30,
+		tags: ['HPA', 'custom metrics', 'Prometheus', 'autoscaling'],
+		prerequisites: [
+			'A running Minikube cluster with Helm installed',
+			'Understand the CPU-based HPA lab first',
+		],
+		whatYouLearn: [
+			'The custom.metrics.k8s.io API and how an adapter serves it',
+			'Wire Prometheus + prometheus-adapter to feed the HPA',
+			'An autoscaling/v2 HPA that targets a Pods metric',
+		],
+		interviewAngle:
+			'\u201cCan the HPA scale on anything other than CPU?\u201d Yes \u2014 CPU/memory come from metrics-server, but custom/external metrics come from an adapter (prometheus-adapter or KEDA) serving the custom.metrics.k8s.io API. Naming the moving parts is what they want.',
+		steps: [
+			{
+				title: 'The pipeline',
+				body: 'App exposes /metrics → Prometheus scrapes it → prometheus-adapter serves custom.metrics.k8s.io → the HPA reads the metric. (KEDA is a simpler production alternative that ships its own metrics adapter.)',
+			},
+			{
+				title: 'Install Prometheus + the adapter with Helm',
+				code: `helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prom prometheus-community/kube-prometheus-stack \\
+  -n monitoring --create-namespace
+helm install padapter prometheus-community/prometheus-adapter -n monitoring \\
+  --set prometheus.url=http://prom-kube-prometheus-stack-prometheus.monitoring.svc \\
+  --set prometheus.port=9090`,
+				lang: 'bash',
+			},
+			{
+				title: 'Deploy an app that exports a request metric',
+				body: 'podinfo exposes http_requests_total; a ServiceMonitor tells Prometheus to scrape it.',
+				code: `kubectl create deployment podinfo --image=stefanprodan/podinfo:6.5.4
+kubectl expose deployment podinfo --port=9898
+kubectl label deployment podinfo app=podinfo --overwrite
+kubectl apply -f - <<'EOF'
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata: { name: podinfo, labels: { release: prom } }
+spec:
+  selector: { matchLabels: { app: podinfo } }
+  endpoints: [{ port: "9898", path: /metrics, interval: 15s }]
+EOF`,
+				lang: 'bash',
+			},
+			{
+				title: 'Confirm the custom metric is being served',
+				body: 'Once the adapter maps the Prometheus series, the custom metrics API returns a value. (Adapter rules map the raw series to a metric name — the fiddly part; the chart ships sensible defaults for http_requests.)',
+				code: `kubectl get --raw \\
+  "/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/pods/*/http_requests" | jq .`,
+				lang: 'bash',
+			},
+			{
+				title: 'Create an autoscaling/v2 HPA on the custom metric',
+				code: `kubectl apply -f - <<'EOF'
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: { name: podinfo }
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: podinfo }
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Pods
+      pods:
+        metric: { name: http_requests }
+        target: { type: AverageValue, averageValue: "10" }
+EOF
+kubectl get hpa podinfo -w`,
+				lang: 'bash',
+			},
+			{
+				title: 'Generate load and watch it scale on RPS',
+				code: `kubectl run -it --rm load --image=busybox --restart=Never -- \\
+  /bin/sh -c 'while true; do wget -q -O- http://podinfo:9898 >/dev/null; done'`,
+				lang: 'bash',
+			},
+		],
+		verify: [
+			'kubectl get --raw .../custom.metrics.k8s.io/... returns a numeric value for http_requests.',
+			'Under load, kubectl get hpa podinfo shows the TARGETS column tracking requests/sec and REPLICAS climbing.',
+		],
+		cleanup:
+			'kubectl delete hpa podinfo && kubectl delete deployment podinfo && kubectl delete svc podinfo && kubectl delete servicemonitor podinfo -n default --ignore-not-found ; helm uninstall padapter -n monitoring ; helm uninstall prom -n monitoring',
+	},
 ];
 
 export const LAB_TAGS = Array.from(new Set(LABS.flatMap(l => l.tags))).sort();
