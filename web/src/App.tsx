@@ -3,7 +3,7 @@ import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import LessonsPage from './pages/LessonsPage';
 import LessonPage from './pages/LessonPage';
-import ArchitecturePage from './pages/ArchitecturePage';
+import DiagramsPage from './pages/DiagramsPage';
 import FlashcardsPage from './pages/FlashcardsPage';
 import QuizPage from './pages/QuizPage';
 
@@ -24,8 +24,17 @@ export default function App() {
 					element={<LessonPage />}
 				/>
 				<Route
+					path='/diagrams'
+					element={<DiagramsPage />}
+				/>
+				<Route
 					path='/architecture'
-					element={<ArchitecturePage />}
+					element={
+						<Navigate
+							to='/diagrams'
+							replace
+						/>
+					}
 				/>
 				<Route
 					path='/flashcards'

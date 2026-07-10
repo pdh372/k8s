@@ -18,17 +18,16 @@ export interface SectionMeta {
 	gradient: string;
 }
 
-export type ArchGroup = 'client' | 'control-plane' | 'worker';
-
-export interface ArchQuestion {
+export interface DiagramQuestion {
 	q: string;
 	a: string;
 }
 
-export interface ArchNode {
+export interface DiagramNode {
 	id: string;
 	label: string;
-	group: ArchGroup;
+	/** Group key — must exist in the owning diagram's `groups` map. */
+	group: string;
 	/** Geometry in the SVG viewBox coordinate system. */
 	x: number;
 	y: number;
@@ -36,12 +35,42 @@ export interface ArchNode {
 	h: number;
 	tagline: string;
 	details: string;
-	questions: ArchQuestion[];
+	questions: DiagramQuestion[];
 }
 
-export interface ArchEdge {
+export interface DiagramEdge {
 	from: string;
 	to: string;
+	/** Draw as a dashed line (e.g. "provisions" / logical relationships). */
+	dashed?: boolean;
+}
+
+export interface DiagramBox {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+	label: string;
+	variant?: 'solid' | 'dashed' | 'ghost';
+	/** Where to place the label. Defaults to "start" (top-left). */
+	labelAlign?: 'start' | 'center';
+}
+
+export interface DiagramGroup {
+	color: string;
+	label: string;
+}
+
+export interface Diagram {
+	id: string;
+	title: string;
+	subtitle: string;
+	viewBox: string;
+	boxes: DiagramBox[];
+	nodes: DiagramNode[];
+	edges: DiagramEdge[];
+	groups: Record<string, DiagramGroup>;
+	defaultSelected: string;
 }
 
 export type Difficulty = 'basic' | 'intermediate' | 'advanced';

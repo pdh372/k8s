@@ -1,105 +1,72 @@
-import { ARCH_NODES, ARCH_EDGES } from '../data/architecture';
-import type { ArchGroup, ArchNode } from '../lib/types';
-
-const GROUP_COLOR: Record<ArchGroup, string> = {
-	'client': '#38bdf8',
-	'control-plane': '#5B8DEF',
-	'worker': '#34d399',
-};
-
-const NODE_BY_ID = Object.fromEntries(ARCH_NODES.map(n => [n.id, n]));
-
-function centerOf(id: string): { x: number; y: number } {
-	const n = NODE_BY_ID[id] as ArchNode | undefined;
-	if (!n) return { x: 0, y: 0 };
-	return { x: n.x + n.w / 2, y: n.y + n.h / 2 };
-}
+import type { Diagram } from '../lib/types';
 
 interface Props {
+	diagram: Diagram;
 	selectedId: string | null;
 	onSelect: (id: string) => void;
 }
 
-export default function ArchitectureDiagram({ selectedId, onSelect }: Props) {
+export default function InteractiveDiagram({
+	diagram,
+	selectedId,
+	onSelect,
+}: Props) {
+	const centerOf = (id: string) => {
+		const n = diagram.nodes.find(node => node.id === id);
+		return n ? { x: n.x + n.w / 2, y: n.y + n.h / 2 } : { x: 0, y: 0 };
+	};
+
 	return (
 		<svg
-			viewBox='0 0 960 620'
+			viewBox={diagram.viewBox}
 			className='h-auto w-full select-none'
 			role='group'
-			aria-label='Interactive Kubernetes cluster architecture diagram'
+			aria-label={`Interactive ${diagram.title} diagram`}
 		>
 			{/* Container regions */}
 			<g>
-				<rect
-					x={40}
-					y={104}
-					width={880}
-					height={170}
-					rx={16}
-					className='fill-slate-900/40 stroke-slate-700'
-					strokeDasharray='2 0'
-				/>
-				<text
-					x={56}
-					y={128}
-					className='fill-slate-400 text-[13px] font-semibold'
-				>
-					Control Plane (Master)
-				</text>
-
-				<rect
-					x={40}
-					y={320}
-					width={440}
-					height={250}
-					rx={16}
-					className='fill-slate-900/40 stroke-slate-700'
-				/>
-				<text
-					x={56}
-					y={344}
-					className='fill-slate-400 text-[13px] font-semibold'
-				>
-					Worker Node 1
-				</text>
-
-				{/* Decorative second worker to imply multiple identical nodes */}
-				<rect
-					x={520}
-					y={320}
-					width={400}
-					height={250}
-					rx={16}
-					className='fill-slate-900/20 stroke-slate-800'
-					strokeDasharray='6 6'
-				/>
-				<text
-					x={720}
-					y={450}
-					textAnchor='middle'
-					className='fill-slate-600 text-[13px]'
-				>
-					Worker Node 2 … N
-				</text>
-				<text
-					x={720}
-					y={470}
-					textAnchor='middle'
-					className='fill-slate-700 text-[11px]'
-				>
-					(identical components)
-				</text>
+				{diagram.boxes.map((box, i) => {
+					const ghost = box.variant === 'ghost';
+					const dashed = box.variant === 'dashed' || ghost;
+					const centerLabel = box.labelAlign === 'center';
+					return (
+						<g key={i}>
+							<rect
+								x={box.x}
+								y={box.y}
+								width={box.w}
+								height={box.h}
+								rx={16}
+								className={
+									ghost
+										? 'fill-slate-900/20'
+										: 'fill-slate-900/40'
+								}
+								stroke={ghost ? '#1e293b' : '#334155'}
+								strokeWidth={1.5}
+								strokeDasharray={dashed ? '6 6' : undefined}
+							/>
+							<text
+								x={centerLabel ? box.x + box.w / 2 : box.x + 16}
+								y={ghost ? box.y + box.h / 2 : box.y + 24}
+								textAnchor={centerLabel ? 'middle' : 'start'}
+								className={`text-[13px] font-semibold ${
+									ghost ? 'fill-slate-600' : 'fill-slate-400'
+								}`}
+							>
+								{box.label}
+							</text>
+						</g>
+					);
+				})}
 			</g>
 
 			{/* Edges (drawn under the node cards so they appear to join the borders) */}
 			<g strokeLinecap='round'>
-				{ARCH_EDGES.map((e, i) => {
+				{diagram.edges.map((e, i) => {
 					const a = centerOf(e.from);
 					const b = centerOf(e.to);
-					const active =
-						selectedId === e.from || selectedId === e.to
-							? true
-							: false;
+					const active = selectedId === e.from || selectedId === e.to;
 					return (
 						<line
 							key={i}
@@ -109,6 +76,7 @@ export default function ArchitectureDiagram({ selectedId, onSelect }: Props) {
 							y2={b.y}
 							stroke={active ? '#5B8DEF' : '#334155'}
 							strokeWidth={active ? 2.5 : 1.5}
+							strokeDasharray={e.dashed ? '5 6' : undefined}
 							opacity={active ? 0.95 : 0.7}
 						/>
 					);
@@ -117,8 +85,8 @@ export default function ArchitectureDiagram({ selectedId, onSelect }: Props) {
 
 			{/* Nodes */}
 			<g>
-				{ARCH_NODES.map(n => {
-					const color = GROUP_COLOR[n.group];
+				{diagram.nodes.map(n => {
+					const color = diagram.groups[n.group]?.color ?? '#5B8DEF';
 					const selected = selectedId === n.id;
 					const dim = selectedId !== null && !selected;
 					return (

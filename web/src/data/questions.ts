@@ -232,6 +232,162 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
 		question: 'Why is etcd backup so important and how often?',
 		answer: "etcd holds all cluster state; without a snapshot you can't recover a lost cluster. Take regular scheduled snapshots and test the restore procedure.",
 	},
+	{
+		id: 'arch-5',
+		topic: 'Architecture',
+		difficulty: 'intermediate',
+		question: 'What happens to a running cluster if etcd goes down?',
+		answer: 'Existing Pods keep running (the kubelet holds their spec), but the control plane is read/write-broken: no new scheduling, no updates, no self-healing until etcd recovers.',
+	},
+	{
+		id: 'arch-6',
+		topic: 'Architecture',
+		difficulty: 'advanced',
+		question:
+			'Why do the scheduler and controller-manager use leader election?',
+		answer: 'You run multiple replicas for HA, but only one may act at a time to avoid conflicting decisions. Leader election picks a single active instance; the others stand by.',
+	},
+	{
+		id: 'pod-7',
+		topic: 'Pods & Workloads',
+		difficulty: 'intermediate',
+		question: 'Job vs CronJob — when do you use each?',
+		answer: 'A Job runs a Pod to completion once (batch task). A CronJob creates Jobs on a schedule (like cron), e.g. nightly backups.',
+	},
+	{
+		id: 'pod-8',
+		topic: 'Pods & Workloads',
+		difficulty: 'advanced',
+		question: 'How does the Horizontal Pod Autoscaler decide to scale?',
+		answer: 'It reads metrics (CPU/memory via metrics-server, or custom metrics) and adjusts the replica count of a Deployment/StatefulSet to hit the target utilization.',
+	},
+	{
+		id: 'pod-9',
+		topic: 'Pods & Workloads',
+		difficulty: 'advanced',
+		question: 'What are the three Pod QoS classes?',
+		answer: 'Guaranteed (every container has requests == limits), Burstable (some requests set), and BestEffort (no requests/limits). BestEffort Pods are evicted first under pressure.',
+	},
+	{
+		id: 'pod-10',
+		topic: 'Pods & Workloads',
+		difficulty: 'basic',
+		question: 'What is a static Pod?',
+		answer: 'A Pod the kubelet runs directly from a local manifest file (e.g. /etc/kubernetes/manifests), not via the apiserver. This is how kubeadm runs the control-plane components.',
+	},
+	{
+		id: 'net-7',
+		topic: 'Services & Networking',
+		difficulty: 'intermediate',
+		question: 'What is a headless Service (clusterIP: None)?',
+		answer: 'A Service with no virtual IP — DNS returns the individual Pod IPs instead of load-balancing. Used with StatefulSets so clients can address specific Pods.',
+	},
+	{
+		id: 'net-8',
+		topic: 'Services & Networking',
+		difficulty: 'advanced',
+		question: 'What does a Service of type ExternalName do?',
+		answer: 'It maps a cluster DNS name to an external DNS name via a CNAME, with no proxying or selector — handy for pointing at an out-of-cluster database.',
+	},
+	{
+		id: 'sched-5',
+		topic: 'Scheduling',
+		difficulty: 'advanced',
+		question: 'What does a PodDisruptionBudget protect against?',
+		answer: 'Voluntary disruptions (like node drains). A PDB sets minAvailable/maxUnavailable so drains block rather than take too many replicas down at once.',
+	},
+	{
+		id: 'sched-6',
+		topic: 'Scheduling',
+		difficulty: 'advanced',
+		question: 'What are topologySpreadConstraints for?',
+		answer: 'Evenly spreading Pods across failure domains (zones, nodes) using maxSkew, so a single zone/node failure does not take out most replicas.',
+	},
+	{
+		id: 'cfg-5',
+		topic: 'Config & Storage',
+		difficulty: 'intermediate',
+		question: 'What is the Downward API?',
+		answer: 'A way to expose Pod/container metadata (name, namespace, labels, resource limits, Pod IP) to the container via env vars or a mounted volume.',
+	},
+	{
+		id: 'cfg-6',
+		topic: 'Config & Storage',
+		difficulty: 'advanced',
+		question: 'How does a StatefulSet give each Pod its own storage?',
+		answer: 'Through volumeClaimTemplates: the controller creates one PVC per Pod (e.g. data-web-0) and always reattaches that same PVC to that Pod ordinal.',
+	},
+	{
+		id: 'cfg-7',
+		topic: 'Config & Storage',
+		difficulty: 'basic',
+		question: 'What are the ways a Pod can consume a ConfigMap?',
+		answer: 'As environment variables, as command-line args, or mounted as files in a volume. Volume mounts can update live; env vars are set only at start.',
+	},
+	{
+		id: 'sec-5',
+		topic: 'Security',
+		difficulty: 'basic',
+		question: 'Authentication vs authorization in Kubernetes?',
+		answer: 'AuthN proves who you are (certs, tokens, OIDC). AuthZ decides what you may do (RBAC). Both run in the apiserver before admission.',
+	},
+	{
+		id: 'sec-6',
+		topic: 'Security',
+		difficulty: 'advanced',
+		question: 'What are admission controllers?',
+		answer: 'Plugins that intercept a request after authZ and before it is persisted. Mutating ones can change objects (e.g. inject sidecars); validating ones can reject them.',
+	},
+	{
+		id: 'sec-7',
+		topic: 'Security',
+		difficulty: 'intermediate',
+		question: 'What replaced PodSecurityPolicy?',
+		answer: 'Pod Security Admission — a built-in admission controller that enforces the Privileged / Baseline / Restricted standards per namespace via labels.',
+	},
+	{
+		id: 'maint-4',
+		topic: 'Maintenance',
+		difficulty: 'intermediate',
+		question: 'How do you inspect and control a rollout?',
+		answer: '`kubectl rollout status` to watch it, `kubectl rollout pause/resume` to gate it, and `kubectl rollout undo` to roll back to the previous revision.',
+	},
+	{
+		id: 'ops-1',
+		topic: 'Troubleshooting',
+		difficulty: 'basic',
+		question: 'Liveness vs readiness vs startup probes?',
+		answer: 'Liveness restarts a hung container; readiness gates whether the Pod receives traffic; startup gives slow-booting apps time before liveness kicks in.',
+	},
+	{
+		id: 'ops-2',
+		topic: 'Troubleshooting',
+		difficulty: 'intermediate',
+		question: 'How do you debug a CrashLoopBackOff?',
+		answer: 'Check `kubectl logs <pod> --previous` for the crash, and `kubectl describe pod` Events. Common causes: bad command, missing config/secret, failing liveness probe.',
+	},
+	{
+		id: 'ops-3',
+		topic: 'Troubleshooting',
+		difficulty: 'intermediate',
+		question: 'A Pod is stuck in Pending — how do you find out why?',
+		answer: 'Run `kubectl describe pod` and read the Events. Usual reasons: insufficient CPU/memory, an unschedulable taint, or an unbound PVC.',
+	},
+	{
+		id: 'ops-4',
+		topic: 'Troubleshooting',
+		difficulty: 'basic',
+		question:
+			'Where do you see why the scheduler or kubelet rejected a Pod?',
+		answer: 'In the object Events — `kubectl describe pod <name>` (or `kubectl get events`). Events explain scheduling failures, image pulls, and probe failures.',
+	},
+	{
+		id: 'ops-5',
+		topic: 'Troubleshooting',
+		difficulty: 'basic',
+		question: 'How do you check live CPU/memory usage of Pods and nodes?',
+		answer: '`kubectl top pods` and `kubectl top nodes` — these need the metrics-server addon installed.',
+	},
 ];
 
 /** Multiple-choice questions for the quiz mode. */
@@ -463,6 +619,179 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
 		correct: 1,
 		explanation:
 			'Upgrade the control plane before the worker nodes; kubelets must not run ahead of the apiserver.',
+	},
+	{
+		id: 'q19',
+		topic: 'Pods & Workloads',
+		question: 'Which object runs a Pod to completion on a schedule?',
+		options: ['Job', 'CronJob', 'DaemonSet', 'Deployment'],
+		correct: 1,
+		explanation:
+			'A CronJob creates Jobs on a cron schedule; a plain Job runs once to completion.',
+	},
+	{
+		id: 'q20',
+		topic: 'Pods & Workloads',
+		question: 'A Pod gets QoS class Guaranteed only when…',
+		options: [
+			'It sets no requests or limits',
+			'Every container has requests equal to limits',
+			'It has a priorityClass',
+			'It runs on the control plane',
+		],
+		correct: 1,
+		explanation:
+			'Guaranteed requires every container to set requests == limits for CPU and memory.',
+	},
+	{
+		id: 'q21',
+		topic: 'Pods & Workloads',
+		question:
+			'The Horizontal Pod Autoscaler needs which addon to read CPU/memory?',
+		options: [
+			'CoreDNS',
+			'metrics-server',
+			'kube-proxy',
+			'Ingress controller',
+		],
+		correct: 1,
+		explanation:
+			'metrics-server supplies the resource metrics the HPA uses to scale.',
+	},
+	{
+		id: 'q22',
+		topic: 'Services & Networking',
+		question: 'Setting `clusterIP: None` on a Service makes DNS return…',
+		options: [
+			'A single virtual IP',
+			'The individual Pod IPs',
+			'The node IPs',
+			'An external CNAME',
+		],
+		correct: 1,
+		explanation:
+			'That is a headless Service — DNS returns each Pod IP instead of a load-balanced VIP.',
+	},
+	{
+		id: 'q23',
+		topic: 'Services & Networking',
+		question:
+			'Which Service type just maps to an external DNS name via CNAME?',
+		options: ['NodePort', 'ClusterIP', 'ExternalName', 'LoadBalancer'],
+		correct: 2,
+		explanation:
+			'ExternalName returns a CNAME to an external host — no proxying or selector.',
+	},
+	{
+		id: 'q24',
+		topic: 'Scheduling',
+		question: 'A PodDisruptionBudget protects your app during…',
+		options: [
+			'Node hardware failure',
+			'Voluntary disruptions like drains',
+			'Image pull errors',
+			'DNS outages',
+		],
+		correct: 1,
+		explanation:
+			'A PDB limits how many replicas voluntary operations (e.g. kubectl drain) may take down at once.',
+	},
+	{
+		id: 'q25',
+		topic: 'Scheduling',
+		question: 'Which field spreads Pods evenly across zones or nodes?',
+		options: [
+			'nodeSelector',
+			'topologySpreadConstraints',
+			'resources.limits',
+			'restartPolicy',
+		],
+		correct: 1,
+		explanation:
+			'topologySpreadConstraints use maxSkew to balance Pods across failure domains.',
+	},
+	{
+		id: 'q26',
+		topic: 'Config & Storage',
+		question: 'volumeClaimTemplates are a feature of which workload?',
+		options: ['Deployment', 'DaemonSet', 'StatefulSet', 'Job'],
+		correct: 2,
+		explanation:
+			'StatefulSets create one PVC per Pod via volumeClaimTemplates, giving stable per-Pod storage.',
+	},
+	{
+		id: 'q27',
+		topic: 'Config & Storage',
+		question: 'Which lets a container read its own labels and Pod IP?',
+		options: ['Downward API', 'ConfigMap', 'StorageClass', 'CSI'],
+		correct: 0,
+		explanation:
+			'The Downward API exposes Pod/container metadata via env vars or a mounted volume.',
+	},
+	{
+		id: 'q28',
+		topic: 'Security',
+		question: 'Admission controllers run…',
+		options: [
+			'Before authentication',
+			'After authZ, before the object is stored',
+			'Only on deletes',
+			'Inside the kubelet',
+		],
+		correct: 1,
+		explanation:
+			'Admission runs after authN/authZ and before persistence; mutating then validating.',
+	},
+	{
+		id: 'q29',
+		topic: 'Security',
+		question: 'What is the built-in replacement for PodSecurityPolicy?',
+		options: [
+			'Network Policies',
+			'Pod Security Admission',
+			'RBAC',
+			'Seccomp',
+		],
+		correct: 1,
+		explanation:
+			'Pod Security Admission enforces Privileged/Baseline/Restricted standards per namespace.',
+	},
+	{
+		id: 'q30',
+		topic: 'Troubleshooting',
+		question: 'Which probe determines if a Pod should receive traffic?',
+		options: ['Liveness', 'Readiness', 'Startup', 'Health'],
+		correct: 1,
+		explanation:
+			'Readiness gates traffic; liveness restarts the container; startup delays liveness for slow starters.',
+	},
+	{
+		id: 'q31',
+		topic: 'Troubleshooting',
+		question: 'First command to debug a CrashLoopBackOff container?',
+		options: [
+			'kubectl scale',
+			'kubectl logs <pod> --previous',
+			'kubectl delete pod',
+			'kubectl cordon',
+		],
+		correct: 1,
+		explanation:
+			'Read the previous container logs to see why it crashed, then check describe Events.',
+	},
+	{
+		id: 'q32',
+		topic: 'Troubleshooting',
+		question: 'A Pod is Pending. Where do you look first?',
+		options: [
+			'kubectl top',
+			'kubectl describe pod (Events)',
+			'kubectl rollout status',
+			'kubectl proxy',
+		],
+		correct: 1,
+		explanation:
+			'The Events in describe explain scheduling failures — no resources, taints, or unbound PVCs.',
 	},
 ];
 

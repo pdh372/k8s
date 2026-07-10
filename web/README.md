@@ -5,8 +5,9 @@ Content is generated from the lesson notes in [`../theory/`](../theory).
 
 ## Features
 
-- **Interactive architecture diagram** — click any control-plane / worker
-  component to see what it does and the interview questions about it.
+- **Interactive diagrams** — click any component in the **cluster architecture**,
+  **networking**, or **storage** diagram to see what it does, with the interview
+  questions that go with it.
 - **Lessons** — all 48 CKA-style lessons, rendered with tables and syntax
   highlighting, plus search.
 - **Flashcards** — flip Q&A cards by topic and difficulty.
@@ -16,15 +17,15 @@ Content is generated from the lesson notes in [`../theory/`](../theory).
 
 ```bash
 cd web
-npm install
-npm run dev      # http://localhost:5173
+pnpm install
+pnpm dev      # http://localhost:5173
 ```
 
 ## Build for production
 
 ```bash
-npm run build    # outputs static files to web/dist/
-npm run preview  # serve the built site locally
+pnpm build    # outputs static files to web/dist/
+pnpm preview  # serve the built site locally
 ```
 
 The build uses a hash router and relative asset paths, so `dist/` can be hosted
@@ -37,15 +38,16 @@ Lesson pages are generated from the repo's `theory/**/README.md` files into
 manually:
 
 ```bash
-npm run gen
+pnpm gen
 ```
 
-Interview questions and the architecture diagram data live in:
+Interview questions and the diagram data live in:
 
 - `src/data/questions.ts` — flashcards + quiz questions
-- `src/data/architecture.ts` — diagram nodes, edges, and their Q&A
+- `src/data/architecture.ts`, `networking.ts`, `storage.ts` — the three diagrams
+  (nodes, edges, and their Q&A); registered in `src/data/diagrams.ts`
 - `src/data/curriculum.ts` — section titles, icons, and descriptions
 
 ## Tech stack
 
-Vite · React · TypeScript · Tailwind CSS · react-markdown.
+Vite · React · TypeScript · Tailwind CSS · react-markdown · pnpm.

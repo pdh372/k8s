@@ -15,10 +15,10 @@ function StatCard({ value, label }: { value: string | number; label: string }) {
 
 const FEATURES = [
 	{
-		to: '/architecture',
+		to: '/diagrams',
 		icon: '🧭',
-		title: 'Interactive Architecture',
-		desc: 'Click through the control plane and worker components to see what each does — with the interview questions that go with it.',
+		title: 'Interactive Diagrams',
+		desc: 'Click through cluster architecture, networking, and storage to see what each component does — with the interview questions that go with it.',
 	},
 	{
 		to: '/lessons',
@@ -65,7 +65,7 @@ export default function HomePage() {
 				</p>
 				<div className='mt-8 flex flex-wrap items-center justify-center gap-3'>
 					<Link
-						to='/architecture'
+						to='/diagrams'
 						className='focus-ring rounded-xl bg-k8s px-5 py-2.5 font-semibold text-white shadow-lg shadow-k8s/20 transition hover:bg-k8s-light'
 					>
 						Explore the cluster →

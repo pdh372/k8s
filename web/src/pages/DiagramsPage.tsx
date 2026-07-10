@@ -1,53 +1,81 @@
 import { useState } from 'react';
-import ArchitectureDiagram from '../components/ArchitectureDiagram';
-import { ARCH_NODES } from '../data/architecture';
-import type { ArchGroup } from '../lib/types';
+import { useSearchParams } from 'react-router-dom';
+import InteractiveDiagram from '../components/InteractiveDiagram';
+import { DIAGRAMS, getDiagram } from '../data/diagrams';
 
-const GROUP_LABEL: Record<ArchGroup, string> = {
-	'client': 'Client',
-	'control-plane': 'Control Plane',
-	'worker': 'Worker Node',
-};
+export default function DiagramsPage() {
+	const [searchParams, setSearchParams] = useSearchParams();
+	const initialId =
+		getDiagram(searchParams.get('d') ?? '')?.id ?? DIAGRAMS[0].id;
 
-const GROUP_DOT: Record<ArchGroup, string> = {
-	'client': 'bg-sky-400',
-	'control-plane': 'bg-k8s-light',
-	'worker': 'bg-emerald-400',
-};
+	const [activeId, setActiveId] = useState<string>(initialId);
+	const diagram = getDiagram(activeId) ?? DIAGRAMS[0];
+	const [selectedId, setSelectedId] = useState<string>(
+		diagram.defaultSelected,
+	);
 
-export default function ArchitecturePage() {
-	const [selectedId, setSelectedId] = useState<string>('kube-apiserver');
-	const node = ARCH_NODES.find(n => n.id === selectedId) ?? ARCH_NODES[0];
+	const node =
+		diagram.nodes.find(n => n.id === selectedId) ?? diagram.nodes[0];
+	const group = diagram.groups[node.group];
+
+	const switchTab = (id: string) => {
+		const d = getDiagram(id);
+		if (!d) return;
+		setActiveId(id);
+		setSelectedId(d.defaultSelected);
+		setSearchParams(id === DIAGRAMS[0].id ? {} : { d: id }, {
+			replace: true,
+		});
+	};
 
 	return (
 		<div className='mx-auto max-w-7xl px-4 py-8'>
+			{/* Tabs */}
+			<div className='mb-6 flex flex-wrap gap-2'>
+				{DIAGRAMS.map(d => (
+					<button
+						key={d.id}
+						onClick={() => switchTab(d.id)}
+						className={[
+							'focus-ring rounded-xl px-4 py-2 text-sm font-semibold transition',
+							d.id === activeId
+								? 'bg-k8s text-white shadow-lg shadow-k8s/20'
+								: 'border border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800',
+						].join(' ')}
+					>
+						{d.title}
+					</button>
+				))}
+			</div>
+
 			<header className='mb-6'>
 				<h1 className='text-2xl font-bold text-white'>
-					Cluster Architecture
+					{diagram.title}
 				</h1>
-				<p className='mt-1 max-w-2xl text-slate-400'>
-					Click any component to see what it does and the interview
-					questions that come up about it.
+				<p className='mt-1 max-w-3xl text-slate-400'>
+					{diagram.subtitle}
 				</p>
 			</header>
 
 			<div className='grid gap-6 lg:grid-cols-[1fr_22rem]'>
 				{/* Diagram */}
 				<div className='rounded-2xl border border-slate-800 bg-slate-900/40 p-3 sm:p-5'>
-					<ArchitectureDiagram
+					<InteractiveDiagram
+						diagram={diagram}
 						selectedId={selectedId}
 						onSelect={setSelectedId}
 					/>
 					<div className='mt-3 flex flex-wrap gap-4 border-t border-slate-800 pt-3 text-xs text-slate-400'>
-						{(Object.keys(GROUP_LABEL) as ArchGroup[]).map(g => (
+						{Object.entries(diagram.groups).map(([key, g]) => (
 							<span
-								key={g}
+								key={key}
 								className='flex items-center gap-1.5'
 							>
 								<span
-									className={`h-2.5 w-2.5 rounded-full ${GROUP_DOT[g]}`}
+									className='h-2.5 w-2.5 rounded-full'
+									style={{ backgroundColor: g.color }}
 								/>
-								{GROUP_LABEL[g]}
+								{g.label}
 							</span>
 						))}
 					</div>
@@ -56,15 +84,16 @@ export default function ArchitecturePage() {
 				{/* Detail panel */}
 				<aside className='lg:sticky lg:top-20 lg:self-start'>
 					<div
+						key={`${diagram.id}-${node.id}`}
 						className='animate-fade-in rounded-2xl border border-slate-800 bg-slate-900/60 p-5'
-						key={node.id}
 					>
 						<div className='flex items-center gap-2'>
 							<span
-								className={`h-2.5 w-2.5 rounded-full ${GROUP_DOT[node.group]}`}
+								className='h-2.5 w-2.5 rounded-full'
+								style={{ backgroundColor: group?.color }}
 							/>
 							<span className='text-xs uppercase tracking-wide text-slate-500'>
-								{GROUP_LABEL[node.group]}
+								{group?.label}
 							</span>
 						</div>
 						<h2 className='mt-1.5 font-mono text-xl font-semibold text-white'>

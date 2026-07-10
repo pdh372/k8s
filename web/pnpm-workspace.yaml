@@ -1,0 +1,5 @@
+# pnpm settings (moved out of package.json in pnpm v10+; onlyBuiltDependencies
+# was replaced by allowBuilds in v11). Allow only esbuild to run its build
+# script; every other dependency build script stays blocked for safety.
+allowBuilds:
+    esbuild: true
