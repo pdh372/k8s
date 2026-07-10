@@ -152,3 +152,34 @@ k8s/
     ├── lesson-46-ha-clusters/
     └── lesson-47-k8s-hard-way/
 ```
+
+## Interactive web app
+
+A visual study hub built from these lesson notes — an interactive cluster
+diagram, hands-on labs, flashcards and quizzes. The app source lives at the
+repo root (Vite + React + TypeScript + Tailwind, package manager: pnpm).
+
+### Run
+
+```bash
+pnpm install
+pnpm dev      # http://localhost:5173
+```
+
+### Build
+
+```bash
+pnpm build    # static output in dist/
+pnpm preview  # serve the built site locally
+```
+
+The static build (hash router, relative asset paths) can be hosted on GitHub
+Pages, Vercel, Netlify, or any static file server.
+
+### Where content lives
+
+- **Lessons** — generated from `theory/**/README.md` into `src/data/lessons.json`
+  (runs automatically before `dev`/`build`, or manually via `pnpm gen`).
+- **Flashcards & quiz** — `src/data/questions.ts`.
+- **Labs** — `src/data/labs.ts` (runnable Minikube scenarios).
+- **Diagrams** — `src/data/{architecture,networking,traffic,storage,rbac,tls,cicd,observability}.ts`, registered in `src/data/diagrams.ts`.

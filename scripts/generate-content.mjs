@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = join(__dirname, '..', '..');
+const REPO_ROOT = join(__dirname, '..');
 const THEORY_DIR = join(REPO_ROOT, 'theory');
 const OUT_FILE = join(__dirname, '..', 'src', 'data', 'lessons.json');
 
