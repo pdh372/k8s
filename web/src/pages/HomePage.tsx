@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { getSectionGroups, LESSONS } from '../lib/lessons';
 import { INTERVIEW_QUESTIONS, QUIZ_QUESTIONS } from '../data/questions';
+import { LABS } from '../data/labs';
 
 function StatCard({ value, label }: { value: string | number; label: string }) {
 	return (
@@ -25,6 +26,12 @@ const FEATURES = [
 		icon: '📚',
 		title: '48 Hands-on Lessons',
 		desc: 'The full CKA-style curriculum: theory, YAML, and runnable labs, rendered and searchable.',
+	},
+	{
+		to: '/labs',
+		icon: '🧪',
+		title: 'Real-world Labs',
+		desc: 'End-to-end scenarios you actually run on Minikube — 3-tier apps, autoscaling, RBAC, network policies and more.',
 	},
 	{
 		to: '/flashcards',
@@ -78,7 +85,7 @@ export default function HomePage() {
 					</Link>
 				</div>
 
-				<div className='mx-auto mt-10 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4'>
+				<div className='mx-auto mt-10 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-5'>
 					<StatCard
 						value={LESSONS.length}
 						label='Lessons'
@@ -95,11 +102,15 @@ export default function HomePage() {
 						value={QUIZ_QUESTIONS.length}
 						label='Quiz Qs'
 					/>
+					<StatCard
+						value={LABS.length}
+						label='Labs'
+					/>
 				</div>
 			</section>
 
 			{/* Feature cards */}
-			<section className='mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+			<section className='mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
 				{FEATURES.map(f => (
 					<Link
 						key={f.to}

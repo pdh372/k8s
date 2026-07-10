@@ -4,6 +4,8 @@ import HomePage from './pages/HomePage';
 import LessonsPage from './pages/LessonsPage';
 import LessonPage from './pages/LessonPage';
 import DiagramsPage from './pages/DiagramsPage';
+import LabsPage from './pages/LabsPage';
+import LabPage from './pages/LabPage';
 import FlashcardsPage from './pages/FlashcardsPage';
 import QuizPage from './pages/QuizPage';
 
@@ -26,6 +28,14 @@ export default function App() {
 				<Route
 					path='/diagrams'
 					element={<DiagramsPage />}
+				/>
+				<Route
+					path='/labs'
+					element={<LabsPage />}
+				/>
+				<Route
+					path='/labs/:id'
+					element={<LabPage />}
 				/>
 				<Route
 					path='/architecture'

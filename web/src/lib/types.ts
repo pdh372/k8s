@@ -91,3 +91,33 @@ export interface QuizQuestion {
 	correct: number;
 	explanation: string;
 }
+
+export interface LabStep {
+	title: string;
+	/** Optional explanation shown above the code. */
+	body?: string;
+	/** Optional command / manifest to run. */
+	code?: string;
+	lang?: 'bash' | 'yaml';
+}
+
+export interface Lab {
+	id: string;
+	title: string;
+	/** One or two sentences framing the real-world scenario. */
+	scenario: string;
+	difficulty: Difficulty;
+	/** Rough time to complete, in minutes. */
+	minutes: number;
+	/** Concepts/keywords exercised by the lab. */
+	tags: string[];
+	prerequisites: string[];
+	whatYouLearn: string[];
+	/** Why this scenario matters in a real job / interview. */
+	interviewAngle: string;
+	steps: LabStep[];
+	/** How to confirm the lab worked. */
+	verify: string[];
+	/** Commands to tear everything down. */
+	cleanup: string;
+}

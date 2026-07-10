@@ -11,6 +11,9 @@ Content is generated from the lesson notes in [`../theory/`](../theory).
   with the interview questions that go with it.
 - **Lessons** — all 48 CKA-style lessons, rendered with tables and syntax
   highlighting, plus search.
+- **Labs** — real, end-to-end scenarios you run on Minikube (3-tier app,
+  zero-downtime rollout, HPA autoscaling, RBAC lockdown, network policies,
+  StatefulSet) with copy-paste steps, verification and the interview angle.
 - **Flashcards** — flip Q&A cards by topic and difficulty.
 - **Quiz** — multiple-choice questions with instant feedback and scoring.
 
@@ -45,6 +48,7 @@ pnpm gen
 Interview questions and the diagram data live in:
 
 - `src/data/questions.ts` — flashcards + quiz questions
+- `src/data/labs.ts` — hands-on lab scenarios (steps, verify, cleanup)
 - `src/data/architecture.ts`, `networking.ts`, `traffic.ts`, `storage.ts`,
   `rbac.ts`, `tls.ts`, `cicd.ts`, `observability.ts` — the eight diagrams (nodes,
   edges, and their Q&A); registered in `src/data/diagrams.ts`. Add a new diagram
