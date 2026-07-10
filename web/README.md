@@ -6,8 +6,8 @@ Content is generated from the lesson notes in [`../theory/`](../theory).
 ## Features
 
 - **Interactive diagrams** — click any component in the **cluster architecture**,
-  **networking**, or **storage** diagram to see what it does, with the interview
-  questions that go with it.
+  **networking**, **storage**, **RBAC/security**, or **CI/CD** diagram to see what
+  it does, with the interview questions that go with it.
 - **Lessons** — all 48 CKA-style lessons, rendered with tables and syntax
   highlighting, plus search.
 - **Flashcards** — flip Q&A cards by topic and difficulty.
@@ -44,8 +44,10 @@ pnpm gen
 Interview questions and the diagram data live in:
 
 - `src/data/questions.ts` — flashcards + quiz questions
-- `src/data/architecture.ts`, `networking.ts`, `storage.ts` — the three diagrams
-  (nodes, edges, and their Q&A); registered in `src/data/diagrams.ts`
+- `src/data/architecture.ts`, `networking.ts`, `storage.ts`, `rbac.ts`,
+  `cicd.ts` — the five diagrams (nodes, edges, and their Q&A); registered in
+  `src/data/diagrams.ts`. Add a new diagram by exporting another `Diagram` and
+  appending it to the `DIAGRAMS` array.
 - `src/data/curriculum.ts` — section titles, icons, and descriptions
 
 ## Tech stack

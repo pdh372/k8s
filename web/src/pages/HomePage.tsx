@@ -18,7 +18,7 @@ const FEATURES = [
 		to: '/diagrams',
 		icon: '🧭',
 		title: 'Interactive Diagrams',
-		desc: 'Click through cluster architecture, networking, and storage to see what each component does — with the interview questions that go with it.',
+		desc: 'Click through cluster architecture, networking, storage, RBAC, and CI/CD to see what each component does — with the interview questions that go with it.',
 	},
 	{
 		to: '/lessons',
