@@ -1,13 +1,18 @@
 import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
-const NAV = [
-	{ to: '/', label: 'Home', end: true },
-	{ to: '/lessons', label: 'Lessons' },
-	{ to: '/diagrams', label: 'Diagrams' },
-	{ to: '/labs', label: 'Labs' },
-	{ to: '/flashcards', label: 'Flashcards' },
-	{ to: '/quiz', label: 'Quiz' },
+const TRACKS = [
+	{ to: '/k8s', label: 'K8s' },
+	{ to: '/gcp', label: 'GCP', soon: true },
+];
+
+const SUBNAV = [
+	{ to: '/k8s', label: 'Home', end: true },
+	{ to: '/k8s/lessons', label: 'Lessons' },
+	{ to: '/k8s/diagrams', label: 'Diagrams' },
+	{ to: '/k8s/labs', label: 'Labs' },
+	{ to: '/k8s/flashcards', label: 'Flashcards' },
+	{ to: '/k8s/quiz', label: 'Quiz' },
 ];
 
 function BrandLogo() {
@@ -17,35 +22,70 @@ function BrandLogo() {
 			className='h-8 w-8 shrink-0'
 			aria-hidden='true'
 		>
-			<path
-				d='M32 3 8 15v22l24 12 24-12V15L32 3Z'
-				fill='#326CE5'
+			<defs>
+				<linearGradient
+					id='brand-gradient'
+					x1='0'
+					y1='0'
+					x2='64'
+					y2='64'
+				>
+					<stop
+						offset='0%'
+						stopColor='#818cf8'
+					/>
+					<stop
+						offset='100%'
+						stopColor='#a78bfa'
+					/>
+				</linearGradient>
+			</defs>
+			<rect
+				width='64'
+				height='64'
+				rx='16'
+				fill='url(#brand-gradient)'
 			/>
 			<g
 				stroke='#fff'
-				strokeWidth='2.2'
+				strokeWidth='4.5'
 				strokeLinecap='round'
+				strokeLinejoin='round'
 				fill='none'
 			>
-				<circle
-					cx='32'
-					cy='30'
-					r='7.5'
-				/>
-				<path d='M32 30V13M32 30l14.7 8.5M32 30 17.3 38.5M32 30l16-4M32 30 16 26M32 30l9 13.5M32 30l-9 13.5' />
+				<path d='M26 20 14 32l12 12' />
+				<path d='M38 20l12 12-12 12' />
 			</g>
-			<circle
-				cx='32'
-				cy='30'
-				r='3'
-				fill='#fff'
-			/>
 		</svg>
+	);
+}
+
+function TrackPill({ to, label, soon }: { to: string; label: string; soon?: boolean }) {
+	return (
+		<NavLink
+			to={to}
+			className={({ isActive }) =>
+				[
+					'focus-ring whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition',
+					isActive
+						? 'bg-k8s/15 text-white'
+						: 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100',
+				].join(' ')
+			}
+		>
+			{label}
+			{soon && (
+				<span className='ml-1.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300'>
+					Soon
+				</span>
+			)}
+		</NavLink>
 	);
 }
 
 export default function Layout() {
 	const location = useLocation();
+	const isGcp = location.pathname.startsWith('/gcp');
 
 	// Scroll back to the top whenever the route changes.
 	useEffect(() => {
@@ -57,35 +97,48 @@ export default function Layout() {
 			<header className='sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur'>
 				<div className='mx-auto flex h-16 max-w-7xl items-center gap-4 px-4'>
 					<NavLink
-						to='/'
+						to='/k8s'
 						className='flex items-center gap-2.5'
 					>
 						<BrandLogo />
 						<span className='hidden text-lg font-semibold tracking-tight text-white sm:block'>
-							K8s Interview Prep
+							Interview Prep
 						</span>
 					</NavLink>
 
 					<nav className='ml-auto flex items-center gap-1 overflow-x-auto'>
-						{NAV.map(item => (
-							<NavLink
-								key={item.to}
-								to={item.to}
-								end={item.end}
-								className={({ isActive }) =>
-									[
-										'focus-ring whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition',
-										isActive
-											? 'bg-k8s/15 text-white'
-											: 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100',
-									].join(' ')
-								}
-							>
-								{item.label}
-							</NavLink>
+						{TRACKS.map(track => (
+							<TrackPill
+								key={track.to}
+								{...track}
+							/>
 						))}
 					</nav>
 				</div>
+
+				{!isGcp && (
+					<div className='border-t border-slate-800/60'>
+						<nav className='mx-auto flex h-11 max-w-7xl items-center gap-1 overflow-x-auto px-4'>
+							{SUBNAV.map(item => (
+								<NavLink
+									key={item.to}
+									to={item.to}
+									end={item.end}
+									className={({ isActive }) =>
+										[
+											'focus-ring whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition',
+											isActive
+												? 'bg-slate-800 text-white'
+												: 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-200',
+										].join(' ')
+									}
+								>
+									{item.label}
+								</NavLink>
+							))}
+						</nav>
+					</div>
+				)}
 			</header>
 
 			<main className='flex-1'>

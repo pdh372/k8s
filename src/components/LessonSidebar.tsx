@@ -42,7 +42,7 @@ export default function LessonSidebar({ onNavigate }: Props) {
 						{matches.map(({ lesson }) => (
 							<NavLink
 								key={lesson.id}
-								to={`/lessons/${lesson.id}`}
+								to={`/k8s/lessons/${lesson.id}`}
 								className={linkClass}
 								onClick={onNavigate}
 							>
@@ -67,7 +67,7 @@ export default function LessonSidebar({ onNavigate }: Props) {
 									{group.lessons.map(lesson => (
 										<NavLink
 											key={lesson.id}
-											to={`/lessons/${lesson.id}`}
+											to={`/k8s/lessons/${lesson.id}`}
 											className={linkClass}
 											onClick={onNavigate}
 										>

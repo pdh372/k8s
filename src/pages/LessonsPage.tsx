@@ -26,7 +26,7 @@ export default function LessonsPage() {
 								{group.lessons.map(lesson => (
 									<Link
 										key={lesson.id}
-										to={`/lessons/${lesson.id}`}
+										to={`/k8s/lessons/${lesson.id}`}
 										className='group rounded-xl border border-slate-800 bg-slate-950/40 p-3 transition hover:border-k8s/50 hover:bg-slate-900'
 									>
 										<div className='font-medium text-slate-100 group-hover:text-k8s-light'>

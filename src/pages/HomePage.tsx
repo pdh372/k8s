@@ -16,31 +16,31 @@ function StatCard({ value, label }: { value: string | number; label: string }) {
 
 const FEATURES = [
 	{
-		to: '/diagrams',
+		to: '/k8s/diagrams',
 		icon: '🧭',
 		title: 'Interactive Diagrams',
 		desc: 'Eight clickable diagrams — architecture, networking, traffic, storage, RBAC, TLS, CI/CD and observability — each with the interview questions that go with it.',
 	},
 	{
-		to: '/lessons',
+		to: '/k8s/lessons',
 		icon: '📚',
 		title: '48 Hands-on Lessons',
 		desc: 'The full CKA-style curriculum: theory, YAML, and runnable labs, rendered and searchable.',
 	},
 	{
-		to: '/labs',
+		to: '/k8s/labs',
 		icon: '🧪',
 		title: 'Real-world Labs',
 		desc: 'End-to-end scenarios you actually run on Minikube — 3-tier apps, autoscaling, RBAC, network policies and more.',
 	},
 	{
-		to: '/flashcards',
+		to: '/k8s/flashcards',
 		icon: '🃏',
 		title: 'Flashcards',
 		desc: 'Flip through curated Q&A by topic and difficulty to rehearse your answers out loud.',
 	},
 	{
-		to: '/quiz',
+		to: '/k8s/quiz',
 		icon: '✅',
 		title: 'Quiz Mode',
 		desc: 'Multiple-choice questions with instant feedback and explanations. Track your score.',
@@ -72,13 +72,13 @@ export default function HomePage() {
 				</p>
 				<div className='mt-8 flex flex-wrap items-center justify-center gap-3'>
 					<Link
-						to='/diagrams'
+						to='/k8s/diagrams'
 						className='focus-ring rounded-xl bg-k8s px-5 py-2.5 font-semibold text-white shadow-lg shadow-k8s/20 transition hover:bg-k8s-light'
 					>
 						Explore the cluster →
 					</Link>
 					<Link
-						to='/flashcards'
+						to='/k8s/flashcards'
 						className='focus-ring rounded-xl border border-slate-700 bg-slate-900/60 px-5 py-2.5 font-semibold text-slate-200 transition hover:bg-slate-800'
 					>
 						Start flashcards
@@ -140,7 +140,7 @@ export default function HomePage() {
 					{groups.map(group => (
 						<Link
 							key={group.id}
-							to={`/lessons/${group.lessons[0].id}`}
+							to={`/k8s/lessons/${group.lessons[0].id}`}
 							className='group overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/40 transition hover:border-slate-600'
 						>
 							<div

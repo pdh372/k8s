@@ -14,7 +14,7 @@ export default function LessonPage() {
 				<div className='rounded-2xl border border-slate-800 bg-slate-900/40 p-8 text-center'>
 					<p className='text-lg text-slate-300'>Lesson not found.</p>
 					<Link
-						to='/lessons'
+						to='/k8s/lessons'
 						className='mt-3 inline-block text-k8s-light hover:underline'
 					>
 						← Back to all lessons
@@ -45,7 +45,7 @@ export default function LessonPage() {
 				<nav className='mt-10 flex flex-col gap-3 border-t border-slate-800 pt-6 sm:flex-row sm:justify-between'>
 					{prev ? (
 						<Link
-							to={`/lessons/${prev.id}`}
+							to={`/k8s/lessons/${prev.id}`}
 							className='focus-ring group rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3 transition hover:border-slate-600 sm:max-w-[48%]'
 						>
 							<div className='text-xs text-slate-500'>
@@ -60,7 +60,7 @@ export default function LessonPage() {
 					)}
 					{next ? (
 						<Link
-							to={`/lessons/${next.id}`}
+							to={`/k8s/lessons/${next.id}`}
 							className='focus-ring group rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3 text-right transition hover:border-slate-600 sm:max-w-[48%] sm:ml-auto'
 						>
 							<div className='text-xs text-slate-500'>Next →</div>

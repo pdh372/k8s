@@ -18,7 +18,7 @@ export default function LabPage() {
 			<div className='mx-auto max-w-3xl px-4 py-12 text-center'>
 				<p className='text-lg text-slate-300'>Lab not found.</p>
 				<Link
-					to='/labs'
+					to='/k8s/labs'
 					className='mt-3 inline-block text-k8s-light hover:underline'
 				>
 					← Back to all labs
@@ -30,7 +30,7 @@ export default function LabPage() {
 	return (
 		<div className='mx-auto max-w-3xl px-4 py-8'>
 			<Link
-				to='/labs'
+				to='/k8s/labs'
 				className='text-sm text-slate-400 hover:text-slate-200'
 			>
 				← All labs

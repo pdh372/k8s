@@ -51,7 +51,7 @@ export default function LabsPage() {
 				{labs.map(lab => (
 					<Link
 						key={lab.id}
-						to={`/labs/${lab.id}`}
+						to={`/k8s/labs/${lab.id}`}
 						className='group flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition hover:border-k8s/50 hover:bg-slate-900'
 					>
 						<div className='flex items-center gap-2'>
