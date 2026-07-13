@@ -1,5 +1,7 @@
-// Reads every lesson README under ../theory and emits a single JSON file the app
-// imports at build time. Re-run with `npm run gen` whenever the notes change.
+// Reads every lesson README under ../theory/k8s and emits a single JSON file
+// the app imports at build time. Re-run with `npm run gen` whenever the notes
+// change. (theory/ nests by track — k8s today, gcp once that content exists —
+// so this only builds the K8s lesson set.)
 import { readdir, readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -7,7 +9,7 @@ import { dirname, join, relative } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
-const THEORY_DIR = join(REPO_ROOT, 'theory');
+const THEORY_DIR = join(REPO_ROOT, 'theory', 'k8s');
 const OUT_FILE = join(__dirname, '..', 'src', 'data', 'lessons.json');
 
 /** Recursively collect every README.md path under a directory. */
@@ -59,7 +61,7 @@ function extractSummary(markdown) {
 
 async function main() {
 	if (!existsSync(THEORY_DIR)) {
-		throw new Error(`theory/ directory not found at ${THEORY_DIR}`);
+		throw new Error(`theory/k8s directory not found at ${THEORY_DIR}`);
 	}
 
 	const readmes = await findReadmes(THEORY_DIR);
