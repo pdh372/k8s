@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { QUIZ_QUESTIONS, QUIZ_TOPICS } from '../data/questions';
 
 function shuffle<T>(arr: T[]): T[] {
@@ -40,13 +40,23 @@ export default function QuizPage() {
 		setFinished(false);
 	};
 
-	// Restart whenever the topic (and therefore the pool) changes.
-	useEffect(() => {
-		restart();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [pool]);
+	// Reset the deck during render (not in an effect) when the topic filter
+	// changes the pool. React still finishes *this* render with the stale
+	// order/index before applying the reset on its immediate re-render, so
+	// pool[order[index]] can momentarily be out of bounds — the ?? pool[0]
+	// below covers that one throwaway pass.
+	const [prevPool, setPrevPool] = useState(pool);
+	if (pool !== prevPool) {
+		setPrevPool(pool);
+		setOrder(shuffle(pool.map((_, i) => i)));
+		setIndex(0);
+		setSelected(null);
+		setAnswered(false);
+		setScore(0);
+		setFinished(false);
+	}
 
-	const q = pool[order[index]];
+	const q = pool[order[index]] ?? pool[0];
 
 	const answer = (i: number) => {
 		if (answered) return;
