@@ -1,0 +1,84 @@
+{
+	"chapters": [
+		{
+			"id": "gcp-01-fundamentals",
+			"title": "Cloud Fundamentals",
+			"description": "Cloud computing basics and GCP's global regions & zones.",
+			"icon": "🌩️",
+			"gradient": "from-sky-500 to-blue-600",
+			"range": [1, 2]
+		},
+		{
+			"id": "gcp-02-compute-and-scaling",
+			"title": "Compute Engine & Scaling",
+			"description": "VMs, instance groups, load balancing and the gcloud CLI.",
+			"icon": "🖥️",
+			"gradient": "from-blue-500 to-indigo-600",
+			"range": [3, 10]
+		},
+		{
+			"id": "gcp-03-app-platforms",
+			"title": "App Platforms",
+			"description": "IaaS/PaaS/SaaS, App Engine, Cloud Run and container basics.",
+			"icon": "🚀",
+			"gradient": "from-violet-500 to-purple-600",
+			"range": [11, 20]
+		},
+		{
+			"id": "gcp-04-kubernetes-gke",
+			"title": "Kubernetes & GKE",
+			"description": "Kubernetes fundamentals and Google Kubernetes Engine.",
+			"icon": "☸️",
+			"gradient": "from-teal-500 to-emerald-600",
+			"range": [21, 26]
+		},
+		{
+			"id": "gcp-05-security-storage",
+			"title": "Security & Storage",
+			"description": "Cloud KMS, block/file storage and Cloud Storage.",
+			"icon": "🔐",
+			"gradient": "from-rose-500 to-pink-600",
+			"range": [27, 31]
+		},
+		{
+			"id": "gcp-06-iam",
+			"title": "Identity & Access Management",
+			"description": "IAM roles, policies and the gcloud IAM CLI.",
+			"icon": "🪪",
+			"gradient": "from-amber-500 to-orange-600",
+			"range": [32, 33]
+		},
+		{
+			"id": "gcp-07-databases",
+			"title": "Databases",
+			"description": "Choosing and operating GCP's managed database services.",
+			"icon": "🗄️",
+			"gradient": "from-cyan-500 to-sky-600",
+			"range": [34, 36]
+		},
+		{
+			"id": "gcp-08-messaging-networking",
+			"title": "Messaging & Networking",
+			"description": "Cloud Pub/Sub and Virtual Private Cloud networking.",
+			"icon": "🌐",
+			"gradient": "from-indigo-500 to-blue-700",
+			"range": [37, 39]
+		},
+		{
+			"id": "gcp-09-operations-governance",
+			"title": "Operations & Governance",
+			"description": "Operations suite, org/IAM hierarchy and pricing.",
+			"icon": "📊",
+			"gradient": "from-fuchsia-500 to-purple-700",
+			"range": [40, 42]
+		},
+		{
+			"id": "gcp-10-advanced-exam-prep",
+			"title": "Advanced & Exam Prep",
+			"description": "Advanced Compute Engine, extra services and certification readiness.",
+			"icon": "🎓",
+			"gradient": "from-orange-500 to-red-600",
+			"range": [43, 45]
+		}
+	]
+}

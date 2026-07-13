@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import LessonsShell from '../components/LessonsShell';
-import { getSectionGroups } from '../lib/lessons';
+import { useLessonsStore } from '../lib/useLessonsStore';
 
 export default function LessonsPage() {
+	const { getSectionGroups, basePath } = useLessonsStore();
 	const groups = getSectionGroups();
 
 	return (
@@ -26,7 +27,7 @@ export default function LessonsPage() {
 								{group.lessons.map(lesson => (
 									<Link
 										key={lesson.id}
-										to={`/k8s/lessons/${lesson.id}`}
+										to={`${basePath}/${lesson.id}`}
 										className='group rounded-xl border border-slate-800 bg-slate-950/40 p-3 transition hover:border-k8s/50 hover:bg-slate-900'
 									>
 										<div className='font-medium text-slate-100 group-hover:text-k8s-light'>

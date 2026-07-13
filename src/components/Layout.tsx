@@ -3,16 +3,21 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
 const TRACKS = [
 	{ to: '/k8s', label: 'K8s' },
-	{ to: '/gcp', label: 'GCP', soon: true },
+	{ to: '/gcp', label: 'GCP' },
 ];
 
-const SUBNAV = [
+const K8S_SUBNAV = [
 	{ to: '/k8s', label: 'Home', end: true },
 	{ to: '/k8s/lessons', label: 'Lessons' },
 	{ to: '/k8s/diagrams', label: 'Diagrams' },
 	{ to: '/k8s/labs', label: 'Labs' },
 	{ to: '/k8s/flashcards', label: 'Flashcards' },
 	{ to: '/k8s/quiz', label: 'Quiz' },
+];
+
+const GCP_SUBNAV = [
+	{ to: '/gcp', label: 'Home', end: true },
+	{ to: '/gcp/lessons', label: 'Lessons' },
 ];
 
 function BrandLogo() {
@@ -86,6 +91,7 @@ function TrackPill({ to, label, soon }: { to: string; label: string; soon?: bool
 export default function Layout() {
 	const location = useLocation();
 	const isGcp = location.pathname.startsWith('/gcp');
+	const subnav = isGcp ? GCP_SUBNAV : K8S_SUBNAV;
 
 	// Scroll back to the top whenever the route changes.
 	useEffect(() => {
@@ -116,29 +122,27 @@ export default function Layout() {
 					</nav>
 				</div>
 
-				{!isGcp && (
-					<div className='border-t border-slate-800/60'>
-						<nav className='mx-auto flex h-11 max-w-7xl items-center gap-1 overflow-x-auto px-4'>
-							{SUBNAV.map(item => (
-								<NavLink
-									key={item.to}
-									to={item.to}
-									end={item.end}
-									className={({ isActive }) =>
-										[
-											'focus-ring whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition',
-											isActive
-												? 'bg-slate-800 text-white'
-												: 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-200',
-										].join(' ')
-									}
-								>
-									{item.label}
-								</NavLink>
-							))}
-						</nav>
-					</div>
-				)}
+				<div className='border-t border-slate-800/60'>
+					<nav className='mx-auto flex h-11 max-w-7xl items-center gap-1 overflow-x-auto px-4'>
+						{subnav.map(item => (
+							<NavLink
+								key={item.to}
+								to={item.to}
+								end={item.end}
+								className={({ isActive }) =>
+									[
+										'focus-ring whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition',
+										isActive
+											? 'bg-slate-800 text-white'
+											: 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-200',
+									].join(' ')
+								}
+							>
+								{item.label}
+							</NavLink>
+						))}
+					</nav>
+				</div>
 			</header>
 
 			<main className='flex-1'>

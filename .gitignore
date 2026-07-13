@@ -6,6 +6,7 @@ dist/
 
 # generated content (rebuilt by `npm run gen`)
 src/data/lessons.json
+src/data/gcp-lessons.json
 
 # logs
 npm-debug.log*

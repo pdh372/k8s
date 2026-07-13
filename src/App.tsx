@@ -8,7 +8,7 @@ import LabsPage from './pages/LabsPage';
 import LabPage from './pages/LabPage';
 import FlashcardsPage from './pages/FlashcardsPage';
 import QuizPage from './pages/QuizPage';
-import GcpComingSoonPage from './pages/GcpComingSoonPage';
+import GcpHomePage from './pages/GcpHomePage';
 
 export default function App() {
 	return (
@@ -66,7 +66,15 @@ export default function App() {
 				/>
 				<Route
 					path='/gcp'
-					element={<GcpComingSoonPage />}
+					element={<GcpHomePage />}
+				/>
+				<Route
+					path='/gcp/lessons'
+					element={<LessonsPage />}
+				/>
+				<Route
+					path='/gcp/lessons/:id'
+					element={<LessonPage />}
 				/>
 				<Route
 					path='*'

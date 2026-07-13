@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { getSectionGroups, searchLessons } from '../lib/lessons';
+import { useLessonsStore } from '../lib/useLessonsStore';
 
 interface Props {
 	onNavigate?: () => void;
@@ -8,8 +8,12 @@ interface Props {
 
 export default function LessonSidebar({ onNavigate }: Props) {
 	const [query, setQuery] = useState('');
-	const groups = useMemo(() => getSectionGroups(), []);
-	const matches = useMemo(() => searchLessons(query), [query]);
+	const { getSectionGroups, searchLessons, basePath } = useLessonsStore();
+	const groups = useMemo(() => getSectionGroups(), [getSectionGroups]);
+	const matches = useMemo(
+		() => searchLessons(query),
+		[searchLessons, query],
+	);
 	const searching = query.trim().length > 0;
 
 	const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -42,7 +46,7 @@ export default function LessonSidebar({ onNavigate }: Props) {
 						{matches.map(({ lesson }) => (
 							<NavLink
 								key={lesson.id}
-								to={`/k8s/lessons/${lesson.id}`}
+								to={`${basePath}/${lesson.id}`}
 								className={linkClass}
 								onClick={onNavigate}
 							>
@@ -67,7 +71,7 @@ export default function LessonSidebar({ onNavigate }: Props) {
 									{group.lessons.map(lesson => (
 										<NavLink
 											key={lesson.id}
-											to={`/k8s/lessons/${lesson.id}`}
+											to={`${basePath}/${lesson.id}`}
 											className={linkClass}
 											onClick={onNavigate}
 										>
