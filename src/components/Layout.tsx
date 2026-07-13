@@ -90,6 +90,7 @@ function TrackPill({ to, label, soon }: { to: string; label: string; soon?: bool
 
 export default function Layout() {
 	const location = useLocation();
+	const isLanding = location.pathname === '/';
 	const isGcp = location.pathname.startsWith('/gcp');
 	const subnav = isGcp ? GCP_SUBNAV : K8S_SUBNAV;
 
@@ -103,7 +104,7 @@ export default function Layout() {
 			<header className='sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur'>
 				<div className='mx-auto flex h-16 max-w-7xl items-center gap-4 px-4'>
 					<NavLink
-						to='/k8s'
+						to='/'
 						className='flex items-center gap-2.5'
 					>
 						<BrandLogo />
@@ -122,27 +123,29 @@ export default function Layout() {
 					</nav>
 				</div>
 
-				<div className='border-t border-slate-800/60'>
-					<nav className='mx-auto flex h-11 max-w-7xl items-center gap-1 overflow-x-auto px-4'>
-						{subnav.map(item => (
-							<NavLink
-								key={item.to}
-								to={item.to}
-								end={item.end}
-								className={({ isActive }) =>
-									[
-										'focus-ring whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition',
-										isActive
-											? 'bg-slate-800 text-white'
-											: 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-200',
-									].join(' ')
-								}
-							>
-								{item.label}
-							</NavLink>
-						))}
-					</nav>
-				</div>
+				{!isLanding && (
+					<div className='border-t border-slate-800/60'>
+						<nav className='mx-auto flex h-11 max-w-7xl items-center gap-1 overflow-x-auto px-4'>
+							{subnav.map(item => (
+								<NavLink
+									key={item.to}
+									to={item.to}
+									end={item.end}
+									className={({ isActive }) =>
+										[
+											'focus-ring whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition',
+											isActive
+												? 'bg-slate-800 text-white'
+												: 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-200',
+										].join(' ')
+									}
+								>
+									{item.label}
+								</NavLink>
+							))}
+						</nav>
+					</div>
+				)}
 			</header>
 
 			<main className='flex-1'>

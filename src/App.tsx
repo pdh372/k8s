@@ -9,6 +9,7 @@ import LabPage from './pages/LabPage';
 import FlashcardsPage from './pages/FlashcardsPage';
 import QuizPage from './pages/QuizPage';
 import GcpHomePage from './pages/GcpHomePage';
+import LandingPage from './pages/LandingPage';
 
 export default function App() {
 	return (
@@ -16,12 +17,7 @@ export default function App() {
 			<Route element={<Layout />}>
 				<Route
 					path='/'
-					element={
-						<Navigate
-							to='/k8s'
-							replace
-						/>
-					}
+					element={<LandingPage />}
 				/>
 				<Route
 					path='/k8s'
