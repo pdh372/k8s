@@ -1,5 +1,7 @@
 # Section 2 — Google Cloud Regions and Zones
 
+> **Reference slides:** [Regions and Zones](https://www.in28minutes.com/downloads/98-cloud-modules/cloud-fundamentals-040-regions-and-zones.pdf) (in28minutes)
+
 ## What is a Region
 
 A **Region** is an independent geographic area (e.g. `us-central1`, `asia-southeast1`, `europe-west1`) that contains multiple isolated data centers. Regions are largely independent of each other — a failure in one region shouldn't affect another.

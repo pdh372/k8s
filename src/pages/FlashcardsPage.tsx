@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { INTERVIEW_QUESTIONS, INTERVIEW_TOPICS } from '../data/questions';
+import { useQuestionsStore } from '../lib/useQuestionsStore';
 import type { Difficulty } from '../lib/types';
 
 const DIFF_STYLE: Record<Difficulty, string> = {
@@ -18,7 +18,14 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export default function FlashcardsPage() {
-	const topics = useMemo(() => ['All', ...INTERVIEW_TOPICS], []);
+	const {
+		interviewQuestions: INTERVIEW_QUESTIONS,
+		interviewTopics: INTERVIEW_TOPICS,
+	} = useQuestionsStore();
+	const topics = useMemo(
+		() => ['All', ...INTERVIEW_TOPICS],
+		[INTERVIEW_TOPICS],
+	);
 	const [topic, setTopic] = useState('All');
 
 	const cards = useMemo(
@@ -26,7 +33,7 @@ export default function FlashcardsPage() {
 			topic === 'All'
 				? INTERVIEW_QUESTIONS
 				: INTERVIEW_QUESTIONS.filter(q => q.topic === topic),
-		[topic],
+		[topic, INTERVIEW_QUESTIONS],
 	);
 
 	const [order, setOrder] = useState<number[]>(() => cards.map((_, i) => i));

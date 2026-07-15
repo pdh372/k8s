@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import CodeBlock from '../components/CodeBlock';
-import { getLab } from '../data/labs';
+import { useLabsStore } from '../lib/useLabsStore';
 import type { Difficulty } from '../lib/types';
 
 const DIFF_STYLE: Record<Difficulty, string> = {
@@ -11,6 +11,7 @@ const DIFF_STYLE: Record<Difficulty, string> = {
 
 export default function LabPage() {
 	const { id } = useParams<{ id: string }>();
+	const { getLab, basePath } = useLabsStore();
 	const lab = id ? getLab(id) : undefined;
 
 	if (!lab) {
@@ -18,7 +19,7 @@ export default function LabPage() {
 			<div className='mx-auto max-w-3xl px-4 py-12 text-center'>
 				<p className='text-lg text-slate-300'>Lab not found.</p>
 				<Link
-					to='/k8s/labs'
+					to={basePath}
 					className='mt-3 inline-block text-k8s-light hover:underline'
 				>
 					← Back to all labs
@@ -30,7 +31,7 @@ export default function LabPage() {
 	return (
 		<div className='mx-auto max-w-3xl px-4 py-8'>
 			<Link
-				to='/k8s/labs'
+				to={basePath}
 				className='text-sm text-slate-400 hover:text-slate-200'
 			>
 				← All labs

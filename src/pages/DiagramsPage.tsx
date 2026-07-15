@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import InteractiveDiagram from '../components/InteractiveDiagram';
-import { DIAGRAMS, getDiagram } from '../data/diagrams';
+import { useDiagramsStore } from '../lib/useDiagramsStore';
 
 export default function DiagramsPage() {
 	const [searchParams, setSearchParams] = useSearchParams();
+	const { diagrams: DIAGRAMS, getDiagram } = useDiagramsStore();
 	const initialId =
 		getDiagram(searchParams.get('d') ?? '')?.id ?? DIAGRAMS[0].id;
 

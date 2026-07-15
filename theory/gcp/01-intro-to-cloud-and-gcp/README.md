@@ -1,5 +1,7 @@
 # Section 1 — Introduction to Cloud and Google Cloud
 
+> **Reference slides:** [Cloud Introduction](https://www.in28minutes.com/downloads/98-cloud-modules/cloud-fundamentals-010-cloud-introduction.pdf) (in28minutes)
+
 ## Cloud Computing Fundamentals
 
 **Cloud computing** is on-demand delivery of IT resources — compute, storage, databases, networking — over the internet, with pay-as-you-go pricing. You rent infrastructure from a provider instead of buying and running it yourself.

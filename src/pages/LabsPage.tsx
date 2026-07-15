@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LABS, LAB_TAGS } from '../data/labs';
+import { useLabsStore } from '../lib/useLabsStore';
 import type { Difficulty } from '../lib/types';
 
 const DIFF_STYLE: Record<Difficulty, string> = {
@@ -10,11 +10,12 @@ const DIFF_STYLE: Record<Difficulty, string> = {
 };
 
 export default function LabsPage() {
+	const { labs: LABS, labTags: LAB_TAGS, basePath } = useLabsStore();
 	const [tag, setTag] = useState<string>('All');
-	const tags = useMemo(() => ['All', ...LAB_TAGS], []);
+	const tags = useMemo(() => ['All', ...LAB_TAGS], [LAB_TAGS]);
 	const labs = useMemo(
 		() => (tag === 'All' ? LABS : LABS.filter(l => l.tags.includes(tag))),
-		[tag],
+		[tag, LABS],
 	);
 
 	return (
@@ -51,7 +52,7 @@ export default function LabsPage() {
 				{labs.map(lab => (
 					<Link
 						key={lab.id}
-						to={`/k8s/labs/${lab.id}`}
+						to={`${basePath}/${lab.id}`}
 						className='group flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-5 transition hover:border-k8s/50 hover:bg-slate-900'
 					>
 						<div className='flex items-center gap-2'>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { QUIZ_QUESTIONS, QUIZ_TOPICS } from '../data/questions';
+import { useQuestionsStore } from '../lib/useQuestionsStore';
 
 function shuffle<T>(arr: T[]): T[] {
 	const a = [...arr];
@@ -11,7 +11,9 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export default function QuizPage() {
-	const topics = useMemo(() => ['All', ...QUIZ_TOPICS], []);
+	const { quizQuestions: QUIZ_QUESTIONS, quizTopics: QUIZ_TOPICS } =
+		useQuestionsStore();
+	const topics = useMemo(() => ['All', ...QUIZ_TOPICS], [QUIZ_TOPICS]);
 	const [topic, setTopic] = useState('All');
 
 	const pool = useMemo(
@@ -19,7 +21,7 @@ export default function QuizPage() {
 			topic === 'All'
 				? QUIZ_QUESTIONS
 				: QUIZ_QUESTIONS.filter(q => q.topic === topic),
-		[topic],
+		[topic, QUIZ_QUESTIONS],
 	);
 
 	const [order, setOrder] = useState<number[]>(() =>

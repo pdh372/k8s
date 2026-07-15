@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { k8sLessonsStore } from '../lib/lessons';
 import { gcpLessonsStore } from '../lib/gcpLessons';
+import { playwrightLessonsStore } from '../lib/playwrightLessons';
 
 function Stat({ value, label }: { value: number; label: string }) {
 	return (
@@ -75,16 +76,17 @@ function TrackCard({
 export default function LandingPage() {
 	const k8sSections = k8sLessonsStore.getSectionGroups().length;
 	const gcpSections = gcpLessonsStore.getSectionGroups().length;
+	const playwrightSections = playwrightLessonsStore.getSectionGroups().length;
 
 	return (
-		<div className='mx-auto max-w-5xl px-4 py-16 sm:py-24'>
+		<div className='mx-auto max-w-6xl px-4 py-16 sm:py-24'>
 			<section className='text-center'>
 				<span className='inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1 text-xs font-medium text-slate-400'>
 					<span className='h-2 w-2 rounded-full bg-emerald-400' />
 					Team study hub
 				</span>
 				<h1 className='mx-auto mt-5 max-w-2xl text-4xl font-extrabold tracking-tight text-white sm:text-5xl'>
-					Two tracks, one place to{' '}
+					Three tracks, one place to{' '}
 					<span className='bg-gradient-to-r from-k8s-light to-violet-400 bg-clip-text text-transparent'>
 						get interview-ready
 					</span>
@@ -95,7 +97,7 @@ export default function LandingPage() {
 				</p>
 			</section>
 
-			<section className='mt-12 grid gap-6 sm:grid-cols-2'>
+			<section className='mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
 				<TrackCard
 					to='/k8s'
 					icon='☸️'
@@ -115,6 +117,16 @@ export default function LandingPage() {
 					lessons={gcpLessonsStore.LESSONS.length}
 					sections={gcpSections}
 					gradient='from-sky-400 to-violet-400'
+				/>
+				<TrackCard
+					to='/playwright'
+					icon='🎭'
+					tagline='Web automation testing'
+					title='Playwright'
+					desc='From JS/TS fundamentals to locators, Page Objects, API mocking and CI — a hands-on path to end-to-end testing.'
+					lessons={playwrightLessonsStore.LESSONS.length}
+					sections={playwrightSections}
+					gradient='from-emerald-500 to-teal-500'
 				/>
 			</section>
 		</div>

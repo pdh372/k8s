@@ -168,6 +168,29 @@ function makeGcpEntryParser(chapters) {
 	};
 }
 
+/**
+ * theory/<track>/<NN-slug>/README.md (flat, one lesson per top-level
+ * folder), with the folder itself used directly as the section — no
+ * chapter-range remapping. Use this when a track's folders are already
+ * browsable-sized sections (Playwright's 8), unlike GCP's flat 45-lecture
+ * tree which needed makeGcpEntryParser's range-based consolidation instead.
+ */
+function parseFlatSectionEntry(parts) {
+	if (parts.length !== 2) return null; // anything not directly under the track's theory dir
+	const lessonDir = parts[0]; // e.g. 03-playwright-hands-on-overview
+	const numMatch = lessonDir.match(/^(\d+)-/);
+	const lessonNum = numMatch ? Number(numMatch[1]) : 999;
+	const slug = lessonDir.replace(/^\d+-?/, '') || lessonDir;
+
+	return {
+		id: lessonDir,
+		section: lessonDir,
+		sectionOrder: lessonNum,
+		lessonNum,
+		slug,
+	};
+}
+
 async function main() {
 	await generateTrack({
 		theoryDir: join(REPO_ROOT, 'theory', 'k8s'),
@@ -183,6 +206,12 @@ async function main() {
 		theoryDir: join(REPO_ROOT, 'theory', 'gcp'),
 		outFile: join(REPO_ROOT, 'src', 'data', 'gcp-lessons.json'),
 		parseEntry: makeGcpEntryParser(chapters),
+	});
+
+	await generateTrack({
+		theoryDir: join(REPO_ROOT, 'theory', 'playwright'),
+		outFile: join(REPO_ROOT, 'src', 'data', 'playwright-lessons.json'),
+		parseEntry: parseFlatSectionEntry,
 	});
 }
 

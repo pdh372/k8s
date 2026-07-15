@@ -9,6 +9,7 @@ import LabPage from './pages/LabPage';
 import FlashcardsPage from './pages/FlashcardsPage';
 import QuizPage from './pages/QuizPage';
 import GcpHomePage from './pages/GcpHomePage';
+import PlaywrightHomePage from './pages/PlaywrightHomePage';
 import LandingPage from './pages/LandingPage';
 
 export default function App() {
@@ -71,6 +72,38 @@ export default function App() {
 				<Route
 					path='/gcp/lessons/:id'
 					element={<LessonPage />}
+				/>
+				<Route
+					path='/playwright'
+					element={<PlaywrightHomePage />}
+				/>
+				<Route
+					path='/playwright/lessons'
+					element={<LessonsPage />}
+				/>
+				<Route
+					path='/playwright/lessons/:id'
+					element={<LessonPage />}
+				/>
+				<Route
+					path='/playwright/diagrams'
+					element={<DiagramsPage />}
+				/>
+				<Route
+					path='/playwright/labs'
+					element={<LabsPage />}
+				/>
+				<Route
+					path='/playwright/labs/:id'
+					element={<LabPage />}
+				/>
+				<Route
+					path='/playwright/flashcards'
+					element={<FlashcardsPage />}
+				/>
+				<Route
+					path='/playwright/quiz'
+					element={<QuizPage />}
 				/>
 				<Route
 					path='*'

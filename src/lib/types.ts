@@ -98,7 +98,7 @@ export interface LabStep {
 	body?: string;
 	/** Optional command / manifest to run. */
 	code?: string;
-	lang?: 'bash' | 'yaml';
+	lang?: 'bash' | 'yaml' | 'typescript';
 }
 
 export interface Lab {

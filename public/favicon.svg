@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <path
-    d="M32 3 8 15v22l24 12 24-12V15L32 3Z"
-    fill="#326CE5"
-  />
-  <g stroke="#fff" stroke-width="2.2" stroke-linecap="round" fill="none">
-    <circle cx="32" cy="30" r="7.5" />
-    <path d="M32 30V13M32 30l14.7 8.5M32 30 17.3 38.5M32 30l16-4M32 30 16 26M32 30l9 13.5M32 30l-9 13.5" />
+  <defs>
+    <linearGradient id="brand-gradient" x1="0" y1="0" x2="64" y2="64">
+      <stop offset="0%" stop-color="#818cf8" />
+      <stop offset="100%" stop-color="#a78bfa" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#brand-gradient)" />
+  <g stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M26 20 14 32l12 12" />
+    <path d="M38 20l12 12-12 12" />
   </g>
-  <circle cx="32" cy="30" r="3" fill="#fff" />
 </svg>

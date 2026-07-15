@@ -2,9 +2,11 @@ import { useState } from 'react';
 import hljs from 'highlight.js/lib/core';
 import bash from 'highlight.js/lib/languages/bash';
 import yaml from 'highlight.js/lib/languages/yaml';
+import typescript from 'highlight.js/lib/languages/typescript';
 
 hljs.registerLanguage('bash', bash);
 hljs.registerLanguage('yaml', yaml);
+hljs.registerLanguage('typescript', typescript);
 
 interface Props {
 	code: string;

@@ -1,24 +1,6 @@
 import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-
-const TRACKS = [
-	{ to: '/k8s', label: 'K8s' },
-	{ to: '/gcp', label: 'GCP' },
-];
-
-const K8S_SUBNAV = [
-	{ to: '/k8s', label: 'Home', end: true },
-	{ to: '/k8s/lessons', label: 'Lessons' },
-	{ to: '/k8s/diagrams', label: 'Diagrams' },
-	{ to: '/k8s/labs', label: 'Labs' },
-	{ to: '/k8s/flashcards', label: 'Flashcards' },
-	{ to: '/k8s/quiz', label: 'Quiz' },
-];
-
-const GCP_SUBNAV = [
-	{ to: '/gcp', label: 'Home', end: true },
-	{ to: '/gcp/lessons', label: 'Lessons' },
-];
+import { TRACKS, resolveTrack } from '../lib/tracks';
 
 function BrandLogo() {
 	return (
@@ -91,8 +73,7 @@ function TrackPill({ to, label, soon }: { to: string; label: string; soon?: bool
 export default function Layout() {
 	const location = useLocation();
 	const isLanding = location.pathname === '/';
-	const isGcp = location.pathname.startsWith('/gcp');
-	const subnav = isGcp ? GCP_SUBNAV : K8S_SUBNAV;
+	const subnav = resolveTrack(location.pathname).subnav;
 
 	// Scroll back to the top whenever the route changes.
 	useEffect(() => {
@@ -116,8 +97,9 @@ export default function Layout() {
 					<nav className='ml-auto flex items-center gap-1 overflow-x-auto'>
 						{TRACKS.map(track => (
 							<TrackPill
-								key={track.to}
-								{...track}
+								key={track.id}
+								to={track.path}
+								label={track.label}
 							/>
 						))}
 					</nav>
@@ -153,8 +135,8 @@ export default function Layout() {
 			</main>
 
 			<footer className='border-t border-slate-800/80 py-6 text-center text-sm text-slate-500'>
-				Built for the team · Kubernetes interview prep · Content
-				generated from the repo's lesson notes.
+				Built for the team · K8s, GCP & Playwright interview prep ·
+				Content generated from the repo's lesson notes.
 			</footer>
 		</div>
 	);
