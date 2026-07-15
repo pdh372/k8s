@@ -5,6 +5,7 @@ import { gcpLessonsStore } from './gcpLessons';
 import { playwrightLessonsStore } from './playwrightLessons';
 import { DIAGRAMS } from '../data/diagrams';
 import { PLAYWRIGHT_DIAGRAMS } from '../data/playwrightDiagrams';
+import { GCP_DIAGRAMS } from '../data/gcpDiagrams';
 import {
 	INTERVIEW_QUESTIONS,
 	INTERVIEW_TOPICS,
@@ -17,8 +18,15 @@ import {
 	PLAYWRIGHT_QUIZ_QUESTIONS,
 	PLAYWRIGHT_QUIZ_TOPICS,
 } from '../data/playwrightQuestions';
+import {
+	GCP_INTERVIEW_QUESTIONS,
+	GCP_INTERVIEW_TOPICS,
+	GCP_QUIZ_QUESTIONS,
+	GCP_QUIZ_TOPICS,
+} from '../data/gcpQuestions';
 import { LABS } from '../data/labs';
 import { PLAYWRIGHT_LABS } from '../data/playwrightLabs';
+import { GCP_LABS } from '../data/gcpLabs';
 
 export interface SubnavItem {
 	to: string;
@@ -82,17 +90,21 @@ export const TRACKS: TrackConfig[] = [
 		label: 'GCP',
 		path: '/gcp',
 		store: gcpLessonsStore,
-		diagrams: [],
+		diagrams: GCP_DIAGRAMS,
 		questions: {
-			quizQuestions: [],
-			quizTopics: [],
-			interviewQuestions: [],
-			interviewTopics: [],
+			quizQuestions: GCP_QUIZ_QUESTIONS,
+			quizTopics: GCP_QUIZ_TOPICS,
+			interviewQuestions: GCP_INTERVIEW_QUESTIONS,
+			interviewTopics: GCP_INTERVIEW_TOPICS,
 		},
-		labs: [],
+		labs: GCP_LABS,
 		subnav: [
 			{ to: '/gcp', label: 'Home', end: true },
 			{ to: '/gcp/lessons', label: 'Lessons' },
+			{ to: '/gcp/diagrams', label: 'Diagrams' },
+			{ to: '/gcp/labs', label: 'Labs' },
+			{ to: '/gcp/flashcards', label: 'Flashcards' },
+			{ to: '/gcp/quiz', label: 'Quiz' },
 		],
 	},
 	{

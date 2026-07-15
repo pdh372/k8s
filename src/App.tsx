@@ -74,6 +74,26 @@ export default function App() {
 					element={<LessonPage />}
 				/>
 				<Route
+					path='/gcp/diagrams'
+					element={<DiagramsPage />}
+				/>
+				<Route
+					path='/gcp/labs'
+					element={<LabsPage />}
+				/>
+				<Route
+					path='/gcp/labs/:id'
+					element={<LabPage />}
+				/>
+				<Route
+					path='/gcp/flashcards'
+					element={<FlashcardsPage />}
+				/>
+				<Route
+					path='/gcp/quiz'
+					element={<QuizPage />}
+				/>
+				<Route
 					path='/playwright'
 					element={<PlaywrightHomePage />}
 				/>

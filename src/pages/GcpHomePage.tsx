@@ -34,28 +34,28 @@ const FEATURES: FeatureCard[] = [
 		desc: 'The full Associate Cloud Engineer curriculum: compute, networking, storage, IAM, GKE and more — rendered and searchable.',
 	},
 	{
+		to: '/gcp/diagrams',
 		icon: '🧭',
 		title: 'Interactive Diagrams',
-		desc: 'Clickable architecture diagrams for VPCs, IAM hierarchies and GKE.',
-		soon: true,
+		desc: 'Clickable architecture diagrams — resource hierarchy, compute + load balancing, GKE, IAM and VPC networking.',
 	},
 	{
+		to: '/gcp/flashcards',
 		icon: '🃏',
 		title: 'Flashcards',
 		desc: 'Flip through curated Q&A by topic and difficulty to rehearse your answers out loud.',
-		soon: true,
 	},
 	{
+		to: '/gcp/quiz',
 		icon: '✅',
 		title: 'Quiz Mode',
 		desc: 'Multiple-choice questions with instant feedback and explanations.',
-		soon: true,
 	},
 	{
+		to: '/gcp/labs',
 		icon: '🧪',
 		title: 'Real-world Labs',
-		desc: 'End-to-end scenarios you actually run against a GCP project.',
-		soon: true,
+		desc: 'gcloud CLI scenarios you actually run against a GCP project — with cleanup steps every time.',
 	},
 ];
 
