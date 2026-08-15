@@ -13,17 +13,28 @@ Quy trình đầy đủ và yêu cầu hiển thị: [`NOTEBOOKLM.md`](./NOTEBOO
 ```
 Tạo một slide deck từ file nguồn.
 
-Yêu cầu bắt buộc:
+CẤU TRÚC
 - Mỗi mục "### Slide N" trong file là ĐÚNG MỘT slide. Không gộp, không tách.
-- Giữ NGUYÊN VĂN chữ của mỗi slide. Không viết lại, không diễn giải,
-  không thêm câu, không thêm bullet, không thêm ví dụ.
-- Dòng bắt đầu bằng "PHỤ ĐỀ:" là chú thích nhỏ đặt ở chân slide,
-  cỡ chữ nhỏ nhất, màu mờ. Bỏ chữ "PHỤ ĐỀ:" đi, chỉ giữ nội dung sau nó.
-- Không thêm slide tiêu đề, slide mục lục, slide kết luận, slide cảm ơn.
-- Không thêm ghi chú diễn giả.
-- Chữ căn giữa, cỡ chữ lớn nhất có thể. Các dòng số phải là phần to nhất slide.
-- Nền tối, chữ sáng. Không ảnh nền, không icon, không hình minh hoạ.
+- Mỗi dòng trong slide có tiền tố chỉ cỡ chữ. Bỏ tiền tố đi, chỉ giữ nội dung sau nó:
+  · "TO:"      → dòng lớn nhất slide, đậm. Đây là thứ người xem đọc đầu tiên.
+  · "VỪA:"     → cỡ trung bình, đậm vừa. Nhãn hoặc câu dẫn.
+  · "THƯỜNG:"  → cỡ chữ thân bài, đọc được thoải mái. KHÔNG được thu nhỏ
+                 thành chú thích mờ — đây là phần nội dung chính, phải rõ ràng.
+- Giữ tỉ lệ khoảng 1 : 1,6 : 2,6 giữa ba cỡ. Đừng để chênh lệch quá lớn.
+
+GIỮ NGUYÊN VĂN
+- Không viết lại, không rút gọn, không diễn giải, không thêm câu, không thêm bullet.
+- Chép chính xác từng CHỮ SỐ. Không thêm, không bớt, không đổi dấu chấm phân cách.
+  Ví dụ 9.334.179 phải ra đúng 9.334.179, không được thành 9.334.1779.
+
+KHÔNG THÊM
+- Không slide tiêu đề, không mục lục, không slide kết luận, không slide cảm ơn.
+- Không ghi chú diễn giả. Không icon, không hình minh hoạ, không ảnh nền.
+
+TRÌNH BÀY
+- Nền tối, chữ sáng. Chữ căn giữa.
 - Toàn bộ chữ nằm gọn trong vùng giữa slide, chừa lề rộng hai bên trái phải.
+- Slide phải đầy đặn, cân đối — không để một dòng chữ lẻ loi giữa khoảng trống lớn.
 - Ngôn ngữ: tiếng Việt.
 
 Tổng cộng đúng {N} slide.
@@ -31,8 +42,10 @@ Tổng cộng đúng {N} slide.
 
 | Bài | File nguồn | Thay `{N}` bằng |
 |---|---|---|
-| 1 | `source/bai-01.md` | **11** |
+| 1 | `source/bai-01.md` | **9** |
 | 2 | `source/bai-02.md` | **12** |
+
+> **Bài 2 chưa chuyển sang định dạng ba tầng chữ** — nội dung vẫn theo kiểu cũ (ít chữ, mỗi slide một ý). Chạy prompt này với bài 2 vẫn được, nhưng slide sẽ trống trải như bản đầu. Viết lại trước khi dựng.
 
 > Nếu NotebookLM vẫn tự viết thêm: tạo notebook mới, nạp **chỉ mình** file nguồn đó, chạy lại. Ít ngữ cảnh thì nó ít sáng tạo hơn.
 
@@ -40,7 +53,7 @@ Tổng cộng đúng {N} slide.
 
 ## Bài 1 — "Cái gì sập trước?"
 
-**Nguồn:** `source/bai-01.md` · **11 slide** · ~33 giây
+**Nguồn:** `source/bai-01.md` · **9 slide**
 
 ### Caption
 
@@ -59,12 +72,13 @@ Không phải video đâu 👀
 
 ### Checklist
 
-- [ ] Slide 4 có chữ "giả định" — 200 triệu **chưa từng xảy ra thật**
-- [ ] Slide 3 ghi đúng **La Velada del Año V** (2025), không phải IV — IV chỉ 3.846.256
-- [ ] Slide 8 có chữ "ước tính"
-- [ ] Slide 2 chỉ ba chữ "Chưa là gì." — đừng thêm gì
+- [ ] **Slide 2: số phải là đúng 9.334.179** — NotebookLM đã từng tự chèn thêm số thành 9.334.1779. Kiểm từng chữ số.
+- [ ] Slide 3 có chữ "giả định" — 200 triệu **chưa từng xảy ra thật**
+- [ ] Slide 2 ghi đúng **La Velada del Año V** (2025), không phải IV — IV chỉ 3.846.256
+- [ ] Slide 6 có chữ "ước tính"
+- [ ] Dòng `THƯỜNG:` phải đọc rõ được, không bị thu thành chú thích mờ
 - [ ] Tên bà Phương Hằng chỉ nằm trong caption, không lên slide
-- [ ] Slide 8 và 9 là hai slide đáng share nhất
+- [ ] Slide 6, 7, 8 là ba slide đáng share nhất
 
 ---
 

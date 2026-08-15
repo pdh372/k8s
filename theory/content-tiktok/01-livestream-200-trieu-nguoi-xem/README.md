@@ -241,16 +241,23 @@ Slide 10      TWIST      Chi tiết lật ngược lần hai.
 Slide 11      MÓC CÂU    Dẫn sang tập sau.
 ```
 
-### Luật viết slide câm
+### Luật viết slide câm — ba tầng chữ
 
-Không có giọng đọc thì **chữ phải gánh 100%**. Bốn ràng buộc:
+**Sai lầm đã mắc:** ban đầu tui đặt luật "tối đa 12 từ / slide". Đó là luật cho video **có giọng đọc** — lời thoại gánh nội dung, slide chỉ làm điểm nhấn. Bỏ voiceover mà giữ luật đó thì cả bài còn ~60 chữ, nhìn ra thành poster động lực chứ không phải bài tech. Một slide chỉ có ba chữ "Chưa là gì." trên nền đen là một lần vuốt bị phí.
 
-1. **Tối đa ~12 từ / slide.** Người xem có 2–3 giây. Quá 12 từ là bị lướt.
-2. **Mỗi slide đúng một ý.** Không câu nối, không "và", không "nhưng mà".
-3. **Slide 1 là toàn bộ cú hook** — vừa là ảnh bìa, vừa quyết định người ta có vuốt tiếp không. Dồn 80% công sức vào đây.
-4. **Đọc được khi tắt tiếng, không cần ngữ cảnh.** Không viết "như đã nói ở trên".
+**Luật đúng:** không có giọng đọc thì chữ phải gánh 100% — nghĩa là phải có chữ **để đọc**. Giải quyết bằng phân tầng cỡ chữ, không phải bằng cắt chữ:
 
-**Nhịp:** ngắn → ngắn → dài (chỗ cần dừng) → ngắn. Đừng để 3 slide dài liền nhau.
+| Tầng | Vai trò | Độ dài |
+|---|---|---|
+| `TO:` | Dòng dừng mắt. Con số hoặc câu chốt. Đọc trong 1 giây. | 1 dòng |
+| `VỪA:` | Nhãn hoặc câu dẫn, gắn nghĩa cho dòng TO. | 1 dòng |
+| `THƯỜNG:` | **Nội dung thật.** Giải thích, con số phụ, ẩn dụ. Cỡ chữ thân bài, đọc rõ được — không phải chú thích mờ. | 2–4 dòng |
+
+Người lướt nhanh đọc dòng `TO:` là đủ hiểu. Người dừng lại có cái mà đọc, và đó mới là người chụp màn hình đi share.
+
+**Hệ quả:** slide dày hơn → cần ít slide hơn. Bài 1 rút từ 11 slide rỗng xuống **9 slide có nội dung**.
+
+**Vẫn giữ:** slide 1 là toàn bộ cú hook (vừa là ảnh bìa), và mỗi slide phải đọc được độc lập, không viết "như đã nói ở trên".
 
 ### Có nên nêu tên bà Phương Hằng không
 
