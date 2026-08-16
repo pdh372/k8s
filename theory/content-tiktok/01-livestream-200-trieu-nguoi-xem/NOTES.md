@@ -1,483 +1,316 @@
-# Sổ học — livestream scale
+# Ôn nhanh — livestream scale
 
-## 15/08/2026 — Buổi 1: Video đi từ 1 điện thoại tới 2 triệu người kiểu gì
+> Bản rút gọn để lướt lại. Số mục ở đây **khớp đúng với [`README.md`](./README.md)** — thấy `4.4` thì mở mục 4.4 trong README là có bản đầy đủ.
+> Chỗ đang học dở nằm ở cuối file.
 
-**Đề bài:** một người quay, hai triệu người xem.
+---
 
-**Cách nghĩ ngây thơ:** server nhận 1 bản rồi gửi ra 2 triệu bản → quá tải.
+## Ý gốc — nhớ cái này là suy ra hết phần còn lại
 
-### Từ vựng
+| | **VIDEO** | **CHAT / QUÀ** |
+|---|---|---|
+| Hướng | Một chiều | Hai chiều |
+| Mọi người nhận | **Giống hệt nhau** | **Khác nhau** |
+| Cache được? | Được | Không |
+| Độ khó | **Dễ** | **Khó — đây là chỗ sập** |
+
+---
+
+## Từ vựng
 
 | Từ | Nghĩa |
 |---|---|
-| **Ingest** | Cửa vào. Server nhận luồng từ người phát. Đặt gần người phát nhất có thể, vì đường upload từ điện thoại là chặng yếu nhất hệ thống. |
-| **Transcode** | Cắt 1 luồng thành nhiều mức chất lượng (1080p → 240p). |
-| **Origin** | Bản gốc. Nơi CDN lên lấy. |
-| **CDN** | *Content Delivery Network*. Mạng lưới server rải khắp thế giới, giữ bản sao để người dùng lấy ở chỗ gần nhất. |
-| **Edge server** | Một server trong CDN, nằm ngoài rìa, gần người xem nhất. |
-| **Fan-out tree** | Cây toả ra. Cách CDN nhân bản video qua nhiều tầng. |
-| **Mbps** | Megabit mỗi giây. Video 720p ≈ 2 Mbps ≈ 250 KB/giây ≈ 900 MB mỗi tiếng xem. |
-
-### Ý chính 1 — Chèn lớp ở giữa, rồi lặp lại chiêu đó
-
-Đường đi đầy đủ:
-
-```
-điện thoại  →  INGEST  →  transcode  →  ORIGIN  →  CDN  →  người xem
-```
-
-**Ba chỗ này đặt theo ba tiêu chí KHÁC nhau** (chỗ hay nhầm):
-
-| | Đặt ở đâu | Chọn theo |
-|---|---|---|
-| **Ingest** | Gần **người phát** | Đường upload càng ngắn càng ít rớt |
-| **Origin** | Một chỗ trung tâm, thường trong một cloud region | Ổn định, để CDN lên lấy |
-| **Edge** | Gần **người xem** | Đường download càng ngắn càng nhanh |
-
-```
-người phát Sài Gòn → INGEST Sài Gòn → ORIGIN Singapore → EDGE Tokyo/Frankfurt/São Paulo → người xem
-```
-
-**Origin không gần ai hết.** Nó chỉ cần ổn định để cả cây CDN biết đường lên lấy.
-(Hệ thống nhỏ hay gộp ingest + origin làm một máy — không sai, nhưng mổ xẻ latency thì phải tách.)
-
-Riêng khúc CDN thì lại là nhiều tầng:
-
-```
-ORIGIN
-   ↓
-tầng vùng        (vài trăm)
-   ↓
-EDGE             (hàng chục nghìn)
-   ↓
-người xem        (hàng triệu)
-```
-
-Mỗi tầng nhân lên ~10 lần → 9 tầng là ra một tỷ.
-**Không ai phải nói chuyện với quá nhiều người cùng lúc.**
-
-Ẩn dụ: cả xóm cần một quyển sách, không ai chạy lên nhà xuất bản. Quán photo đầu hẻm lấy **một** bản rồi photo cho cả xóm.
-→ nhà xuất bản = origin, quán photo = edge.
-
-**Đây là lý do video KHÔNG phải phần khó.**
-
-### Ý chính 2 — Không tự dựng CDN, đi thuê
-
-Cloudflare · Akamai · Fastly · AWS CloudFront · Google Cloud CDN.
-Việc của mình: đẩy **một luồng** vào endpoint của họ. Hết.
-
-### Ý chính 3 — Autoscale kiểu "CPU > 80% thì thêm server" KHÔNG dùng được
-
-| | Web thường | Livestream |
-|---|---|---|
-| Traffic | Tăng từ từ | **Nổ** — 50k → 550k trong 30 giây |
-| Cách làm | Phản ứng sau khi tải tăng | **Phải có sẵn trước** |
-| Đơn vị thời gian | Phút (boot + health check) | Giây |
-
-Autoscale phản ứng trong *phút*, sóng livestream ập đến trong *giây* → server mới boot xong thì đã sập hoặc đã hết sóng.
-Nhà cung cấp CDN nuôi sẵn năng lực khổng lồ đang nằm không, dùng chung mọi khách. Mình xin một lát của cái đã dựng sẵn.
+| **Ingest** | Server nhận stream từ streamer. Đặt **gần streamer**. |
+| **Transcode** | Cắt 1 stream thành nhiều rendition (1080p → 240p). |
+| **Origin** | Bản gốc, chỗ CDN lên lấy. Đặt ở **chỗ trung tâm, không gần ai**. |
+| **CDN** | Mạng lưới server rải khắp thế giới giữ bản sao. |
+| **Edge** | Server ngoài rìa CDN, đặt **gần viewer**. |
+| **PoP** | *Point of Presence* — một điểm hiện diện của CDN. |
+| **Segment** | Mẩu video 2–6 giây, mỗi mẩu là một file có URL. |
+| **Chunk** | Mẩu nhỏ hơn nữa, ~0,2 giây. Dùng trong LL-HLS. |
+| **Buffer** | Kho video dự trữ sẵn trong player. |
+| **ABR** | Tự đổi rendition theo internet của viewer. |
+| **Mbps** | Video 720p ≈ 2 Mbps ≈ 900 MB mỗi tiếng xem. |
 
 ---
 
-## 15/08/2026 — Buổi 2: Stream nhỏ thì sao?
+# 1. Đề bài
 
-**Câu hỏi:** stream chỉ 100 view nhưng rải 50 quốc gia.
+Một streamer, 2 triệu viewer. Cách nghĩ ngây thơ: server gửi ra 2 triệu bản.
 
-### Ý chính 4 — Cây CDN chỉ đáng tiền khi đông người đứng hứng
+```
+2.000.000 × 2 Mbps = 4 Tbps = 500 GB mỗi giây
+```
 
-| | 2 triệu người, tập trung | 100 người, rải 50 nước |
+Không server nào làm nổi.
+
+---
+
+# 2. Cây phân phối
+
+**2.1 — Chèn một lớp ở giữa.** Đường đi đầy đủ có 4 chặng, không phải 2:
+
+```
+điện thoại → INGEST → transcode → ORIGIN → CDN → viewer
+```
+
+Ba chỗ đặt theo **ba tiêu chí khác nhau** (chỗ hay nhầm):
+
+| | Đặt ở đâu |
+|---|---|
+| Ingest | Gần **streamer** — đường upload ngắn thì ít rớt |
+| Origin | Chỗ trung tâm, **không gần ai** — chỉ cần ổn định |
+| Edge | Gần **viewer** — đường download ngắn thì nhanh |
+
+→ *Origin không nằm trên đường đi của viewer. Nó chỉ bị hỏi ~8 lần/giây khi cache miss.*
+
+**2.2 — Đoạn upload là single point of failure.** Từ CDN xuống viewer có nhiều đường (edge chết thì đổi edge khác). Từ điện thoại streamer lên ingest chỉ có **một** đường, và lúc đó video **chưa tồn tại ở đâu khác trên đời**. Rớt là cả 2 triệu người freeze.
+→ *Vì vậy ingest đặt gần streamer — rút ngắn đúng đoạn không có dự phòng.*
+
+**2.3 — Lặp lại đúng chiêu đó.** Origin cũng overload nếu 100.000 edge cùng hỏi → chèn regional tier vào giữa.
+
+```
+ORIGIN → REGIONAL TIER (vài trăm) → EDGE (hàng chục nghìn) → viewer (hàng triệu)
+```
+
+Mỗi tầng nhân ~10 lần, 9 tầng ra một tỷ. **Không ai phải nói chuyện với quá nhiều người cùng lúc.**
+→ *Đây là lý do video KHÔNG phải phần khó.*
+
+**2.4 — Không tự dựng CDN, đi thuê.** Cloudflare, Akamai, Fastly, CloudFront, Cloud CDN. Việc của mình: đẩy một stream vào endpoint của họ.
+
+**2.5 — Autoscale "CPU > 80%" vô dụng.** Autoscale phản ứng trong *phút*, sóng livestream ập tới trong *giây* (50k → 550k trong 30 giây). Phải có năng lực sẵn trước, không phản ứng sau.
+
+---
+
+# 3. Kinh tế của cái cây
+
+**3.1 — Stream nhỏ TỐN HƠN stream lớn.**
+
+| | 2 triệu viewer, tập trung | 100 viewer, rải 50 nước |
 |---|---|---|
-| Số edge phải kéo video về | ~50 | ~50 |
-| Mỗi edge phục vụ | 40.000 người | **2 người** |
 | Origin bị hỏi | 50 lần | **50 lần** |
+| Mỗi edge phục vụ | 40.000 người | **2 người** |
 
-**Cùng tải lên origin, nhưng một bên phục vụ 2 triệu, bên kia 100.**
-→ chi phí trên mỗi người xem chênh **20.000 lần**.
+Cùng tải lên origin nhưng chia cho 2 triệu thay vì 100 → chi phí mỗi viewer chênh **20.000 lần**.
+→ *Cách chữa: stream ít viewer thì phục vụ từ regional tier thay vì edge thành phố.*
 
-**Cách xử lý:** stream ít người thì không đẩy xuống edge thành phố, mà gom lên phục vụ từ **tầng vùng**. Trễ thêm vài chục ms, nhưng thay vì 3 nhánh cây thì chỉ tốn 1.
-(Quán photo: thay vì mỗi hẻm một quán thì cả quận một quán.)
+**3.2 — Pull-based.** Edge chỉ kéo video về khi có người ở đó hỏi. Không ai xem thì không tốn gì.
 
-### Ý chính 5 — Pull-based: edge chỉ kéo khi có người hỏi
-
-```
-Không ai ở Brazil mở stream  →  edge Brazil không kéo gì, không tốn gì
-Có 1 người mở                →  lúc đó edge mới lên origin lấy về
-```
-
-Không đẩy sẵn đi khắp nơi. Nên không có chuyện "phí edge" — cái phí là edge kéo **cả luồng** về chỉ để phục vụ 1 người.
-
-### Ý chính 6 — Transcode: chi phí stream nhỏ không trốn được
-
-Người phát đẩy lên 1 luồng. Người xem internet mỗi người một kiểu → phải giải mã rồi **mã hoá lại** thành nhiều bản:
-
-```
-1 luồng vào  →  [ TRANSCODE ]  →  1080p / 720p / 480p / 360p / 240p
-```
-
-| | Transcode | Bandwidth |
-|---|---|---|
-| Tính theo | **Mỗi luồng phát** | Mỗi người xem |
-| 100 người xem | Tốn y hệt | Gần như bằng 0 |
-| 2 triệu người xem | **Tốn y hệt** | Rất nhiều |
-
-→ Với stream nhỏ, **transcode gần như là toàn bộ hoá đơn**.
-→ Lý do nhiều nền tảng bắt đủ follower mới cho live, hoặc stream nhỏ thì cho xem thẳng bản gốc không transcode (internet yếu thì chịu giật).
+**3.3 — Transcode tính theo STREAM, không theo viewer.** 100 hay 2 triệu viewer, hoá đơn transcode y hệt. Với stream nhỏ nó gần như là toàn bộ hoá đơn.
+→ *Lý do nhiều nền tảng bắt đủ follower mới cho live, hoặc pass-through không transcode.*
 
 ---
 
-## 15/08/2026 — Buổi 3: Segment caching
+# 4. Cache
 
-### Ý chính 7 — Livestream không phải dòng chảy, nó là một đống file nhỏ
+**4.1 — Livestream là một đống file nhỏ, không phải dòng chảy.** Mỗi segment một URL riêng (`/live/abc/seg-041.ts`). Tên gọi **HLS** — chạy bằng đúng HTTP tải file thường của web.
 
-Video bị cắt thành **segment** 2–6 giây, mỗi segment là **một file có URL riêng**:
-
-```
-/live/abc/seg-041.ts
-/live/abc/seg-042.ts
-/live/abc/seg-043.ts
-```
-
-Máy mình tải lần lượt từng file, phát nối lại → mắt thấy liền mạch.
-Tên gọi: **HLS** (*HTTP Live Streaming*). Chạy bằng đúng HTTP tải file thường của web.
-
-### Ý chính 8 — Cache cần một CÁI TÊN để tra
-
-Cache = bảng tra `key → value`. Không có key thì không cache được.
+**4.2 — Cache cần một CÁI TÊN để tra.** Cache = bảng tra `key → value`.
 
 | | gRPC stream | HLS |
 |---|---|---|
-| Hình dạng | Ống mở, giữ liên tục | Từng file rời |
-| Có tên để tra? | Không | **Có — URL** |
-| Máy ở giữa cache được? | Không | **Được** |
+| Hình dạng | Ống mở, không tên | File rời, **có URL** |
+| Cache được? | Không | **Được** |
 
-Cùng một URL = cùng một mớ bytes cho mọi người → máy nào nằm giữa đường cũng giữ lại được một bản.
+→ *Ô comment chính là kiểu ống mở như gRPC. Đây là lý do gốc rễ: video dễ, chat sập.*
 
-> **Ghi nhớ:** ô comment trong livestream chính là kiểu **ống mở như gRPC** — mỗi người một nội dung, không có tên để tra, không cache được.
-> Đây là lý do gốc rễ: video thì dễ, chat thì sập.
+**4.3 — Cache ở MỌI tầng.** edge → regional tier → origin. **cache hit** = có sẵn trả liền, **cache miss** = phải xin tầng trên. Người đầu tiên gây miss, người thứ 2 → 40.000 đều được trả tại chỗ.
 
-### Ý chính 9 — Cache ở MỌI tầng, không chỉ edge
+**4.4 — Càng đông càng RẺ.** 2 triệu viewer, segment 6 giây:
 
 ```
-người xem  →  EDGE       có sẵn? → trả luôn
-                 ↓ không có
-              tầng vùng   có sẵn? → trả luôn
-                 ↓ không có
-              ORIGIN      lúc này mới phải hỏi bản gốc
+ở edge:     2.000.000 ÷ 6   ≈  333.000 request/giây
+tới origin: 50 PoP ÷ 6      ≈        8 request/giây     → nén 40.000 lần
 ```
 
-- **cache hit** — có sẵn, trả liền
-- **cache miss** — chưa có, phải đi xin tầng trên
+→ *Tải lên origin phụ thuộc **số PoP**, KHÔNG phụ thuộc số viewer. Thêm 1 triệu người, origin vẫn 8 req/giây.*
 
-Người đầu tiên trong khu vực gây cache miss, nhưng edge giữ lại một bản. Người thứ 2 → thứ 1.000 đều được trả ngay tại chỗ. **Origin không hề biết những người đó tồn tại.**
+Không miễn phí hoàn toàn — **bandwidth ở edge vẫn tăng theo viewer**. Transcode và origin đứng yên. Hai trong ba khoản không đổi, chỉ khoản rẻ nhất là tăng.
 
-### Ý chính 10 — Càng đông càng RẺ
+**4.5 — Thundering herd & request collapsing.** Segment vừa đẻ ra thì chưa edge nào có, mà 40.000 người đang chờ đúng nó → nếu edge cứ thiếu là đi xin thì bắn 40.000 request lên origin cùng lúc.
+→ *Chữa bằng **request collapsing**: edge thấy 40.000 request cùng một URL → gửi đúng 1 lên trên, 39.999 cái xếp hàng chờ chung.*
 
-2 triệu người, segment 6 giây:
-
-| | Số request |
-|---|---|
-| Ở rìa (người xem hỏi edge) | 2.000.000 ÷ 6 ≈ **333.000 / giây** |
-| Tới origin (50 điểm CDN, mỗi điểm xin 1 lần) | 50 ÷ 6 ≈ **8 / giây** |
-
-**Nén 40.000 lần.** Origin chỉ cần một con VPS rẻ tiền.
-
-> **Chốt:** tải lên origin phụ thuộc **số điểm CDN**, KHÔNG phụ thuộc số người xem.
-> Thêm 1 triệu người nữa, origin vẫn 8 request/giây.
-
-| | Web app thường | Livestream |
-|---|---|---|
-| Gấp đôi người dùng | Server gánh gấp đôi | **Origin không đổi** |
-| Vì sao | Mỗi người hỏi một thứ khác | Ai cũng xin **đúng một file giống nhau** |
-
-(Feed TikTok = vế trái — mỗi người lướt video khác nhau, cache trượt liên tục.)
-
-**Nói cho chuẩn — không miễn phí hoàn toàn:**
-
-| Khoản | Tăng theo người xem? |
-|---|---|
-| Transcode | Không — tính theo luồng |
-| Tải lên origin | **Không** |
-| Bandwidth edge | Có |
-
-→ Chi phí **trên mỗi người xem** giảm dần khi càng đông, chứ không phải bằng 0. Hai trong ba khoản đứng yên, chỉ khoản rẻ nhất là tăng.
-
-### Ý chính 11 — Request collapsing & thundering herd
-
-Lúc segment mới **vừa đẻ ra** thì chưa edge nào có nó. Mà 40.000 người trong khu vực đang chờ đúng nó.
-
-Edge làm kiểu ngây thơ (thiếu thì đi xin) → bắn 40.000 request lên origin cùng lúc. Nhân 50 điểm CDN = 2 triệu request đập vào origin trong một giây → **origin chết, cache thành vô dụng**.
-
-Hiện tượng: **thundering herd** (đàn trâu giẫm đạp).
-
-**Cách chữa — request collapsing** (còn gọi *request coalescing*):
-
-```
-1.  edge nhận ra 40.000 request hỏi CÙNG một URL
-2.  gửi ĐÚNG 1 request lên tầng trên
-3.  bắt 39.999 cái còn lại xếp hàng chờ chung
-4.  có kết quả → trả cho cả 40.000 người một lượt
-```
-
-### Ý chính 12 — Vì sao live cần cái này hơn mọi thứ khác
-
-| | Netflix (VOD) | Live |
-|---|---|---|
-| Người xem đang ở đâu | Mỗi người một phút khác nhau | **Tất cả cùng một khoảnh khắc** |
-| Request phân bố | Rải đều hàng nghìn segment | **Dồn hết vào 1 segment** |
-| File có trước khi ai hỏi? | Có — quay xong từ lâu | **Không — vừa mới đẻ** |
-| Bơm sẵn xuống edge được? | Được, trước ngày phát hành | **Không thể** |
-
-> **Live không phải "thỉnh thoảng dính thundering herd".**
-> **Live LÀ thundering herd, cứ 6 giây một lần, suốt buổi.**
+**4.6 — Live LÀ thundering herd, cứ 6 giây một lần.** Netflix thoát được vì mỗi viewer ở một phút khác nhau, request rải đều hàng nghìn segment. Live thì tất cả ở cùng một khoảnh khắc — đó là định nghĩa của live. Netflix còn bơm sẵn file xuống edge trước ngày phát hành; live thì file chưa tồn tại cho tới đúng giây nó được cần.
 
 ---
 
-## 15/08/2026 — Buổi 4: Latency
+# 5. Latency
 
-### Ý chính 13 — Latency bắt đầu từ trước khi video rời khỏi camera
+**5.1 — Latency bắt đầu trước khi video rời camera.** Muốn gửi file thì file phải tồn tại đã. `seg-100` chứa giây 600→606, nên phải quay xong đủ 6 giây mới đóng gói được. Lúc file vừa xong, nội dung bên trong **đã cũ 6 giây**.
 
-Muốn gửi một file thì file đó phải tồn tại đã. Mà `seg-100` chứa giây 600→606, nên camera phải **quay xong đủ 6 giây** mới đóng gói được.
-
-```
-camera quay 600 → 601 → ... → 606
-                               ↑ tới đây file mới xong, giờ mới gửi đi được
-```
-
-→ Ngay lúc file vừa xong, nội dung bên trong **đã cũ 6 giây**. Chưa tính network gì cả.
-
-### Ý chính 14 — Cộng dồn ra ~26 giây
+**5.2 — Cộng dồn ra ~26 giây.**
 
 ```
-quay đủ 1 segment              6,0 giây
-đẩy lên ingest                 0,3
-transcode (giải mã + mã lại)   1,5
-chạy qua cây CDN               0,7
-                              ─────
-                               8,5 giây
-buffer trong player (3 segment) 18,0
-                              ─────
-                              ~26 giây
+quay đủ 1 segment               6,0
+ingest + transcode + CDN        2,5
+buffer trong player (3 segment) 18,0   ← khoản to nhất, nằm trong máy mình
+                               ─────
+                               ~26 giây
 ```
 
-**Phần lớn latency nằm ngay trong máy mình, không phải ở network.**
+→ *Bỏ transcode (pass-through) cắt được 1,5 giây, nhưng mất ABR — internet yếu không có rendition nhẹ để tụt xuống.*
 
-> **Nối với buổi 2:** bỏ transcode (pass-through) thì cắt luôn 1,5 giây đó → 8,5 còn 7,0 giây.
->
-> | | Có transcode | Pass-through |
-> |---|---|---|
-> | Số bản chất lượng | 5 (1080p → 240p) | **1 bản duy nhất** |
-> | Người internet yếu | Tự tụt xuống 240p | **Không có gì để tụt → giật, đứng hình** |
-> | Latency | +1,5 giây | Nhanh hơn |
-> | Chi phí | Tốn theo luồng | Gần như 0 |
->
-> → Pass-through **không chỉ để tiết kiệm tiền, nó còn là một cách giảm latency.** Đổi lại là mất ABR.
-
-Player **không phát ngay** khi nhận được segment — nó gom 2–3 cái rồi mới bắt đầu:
+**5.3 — Buffer là kho video dự trữ. Latency là CỐ Ý.**
 
 ```
-nhận seg-100  →  giữ lại, chưa phát
-nhận seg-101  →  giữ lại, chưa phát
-nhận seg-102  →  giờ mới phát seg-100
+không buffer:  internet khựng 2 giây → FREEZE ngay
+có buffer:     internet khựng 2 giây → còn 18 giây trong kho, không hay biết
 ```
 
-### Ý chính 15 — Vì sao player cố tình chờ: buffer là kho dự trữ
+Ẩn dụ **bồn nước trên mái**: bồn to thì cúp nước vẫn có xài, đổi lại nước trong bồn là nước cũ. Buffer to = mượt nhưng trễ. Buffer nhỏ = nhanh nhưng dễ giật.
 
-Đường internet không đều, thỉnh thoảng khựng một hai giây.
+**5.4 — Hai chỗ internet yếu, khác nhau hoàn toàn.**
 
-```
-Không buffer:  internet khựng 2 giây  →  ĐỨNG HÌNH ngay
-Có buffer:     internet khựng 2 giây  →  vẫn còn 18 giây trong kho, bạn không hay biết
-                                  →  internet hồi lại, kho nạp đầy tiếp
-```
-
-Ẩn dụ: **bồn nước trên mái nhà.** Nước máy lúc mạnh lúc yếu, có khi cúp, nhưng có bồn thì vòi luôn chảy đều. Bồn càng to càng yên tâm — đổi lại nước trong bồn là nước cũ.
-
-**Đánh đổi cốt lõi:**
-
-| Buffer | Latency | Độ mượt |
+| | Internet **viewer** yếu | Internet **streamer** yếu |
 |---|---|---|
-| To (3 segment = 18s) | Trễ nhiều | Mượt, chịu được internet phập phù |
-| Nhỏ (1 chunk = 0,5s) | Trễ ít | Dễ giật khi internet xấu |
+| Ai bị ảnh hưởng | Chỉ mình người đó | **Tất cả viewer** |
+| Cứu bằng | Buffer + ABR | Ingest đặt gần |
 
-Không có lựa chọn "vừa nhanh vừa mượt". Chỉ có chọn nghiêng về bên nào.
+**5.5 — LL-HLS: cắt chunk 0,2 giây → tụt xuống ~3 giây.** Không chờ đủ segment, quay được 0,2 giây là gửi ngay. Player cũng chỉ giữ ~1 giây buffer thay vì 18.
 
-> **Latency đó là CỐ Ý, không phải internet mình yếu.**
+**5.6 — Ba cái giá của LL-HLS.**
+- **Request tăng 30 lần** — `2.000.000 ÷ 0,2 = 10 triệu req/giây` thay vì 333.000. Cùng số byte, gấp 30 lần số lần hỏi. Kéo theo **thundering herd dày hơn 30 lần**.
+- **Buffer mỏng thì dễ giật** — khựng 5 giây là freeze ngay.
+- **Cả hệ thống phải hỗ trợ** — player, CDN, origin, thiếu một mắt xích là không chạy.
 
-### Ý chính 16 — Hai chỗ internet yếu, khác nhau hoàn toàn
+→ *Chọn LL-HLS khi có tương tác (bán hàng, đấu giá, đọc comment). Chọn HLS khi xem một chiều.*
 
-Buffer trong player chỉ che được cho **người xem**. Internet người phát yếu là chuyện khác hẳn.
+**5.7 — Chunk vẫn cache được, chỗ khôn nhất.** Mỗi chunk vẫn có URL riêng (`seg-041.part-1.mp4`) → vẫn có tên để tra → cả cây CDN chạy y như cũ. Người ta **cố tình không phát minh giao thức mới**.
 
-```
-người phát → [ upload ] → INGEST → ... → EDGE → [ download ] → người xem
-                  ↑                                     ↑
-            rớt ở đây =                            rớt ở đây =
-            cả 2 triệu người chết                  mình bạn chết
-```
-
-| | Internet **người xem** yếu | Internet **người phát** yếu |
-|---|---|---|
-| Ai bị ảnh hưởng | Chỉ mình người đó | **Tất cả người xem** |
-| Cứu bằng gì | Buffer trong player + ABR tụt chất lượng | Ingest đặt gần, app người phát cũng có buffer khi upload |
-| Nếu tệ quá | Xem 240p hoặc giật | **Cả buổi live đứng hình, không ai cứu nổi** |
-
-### Ý chính 17 — Vì sao đoạn upload là chỗ nguy hiểm nhất
-
-**Phía dưới có nhiều đường, phía trên chỉ có một:**
-
-```
-người phát ──(chỉ 1 đường)──> INGEST ──> ORIGIN ──> EDGE ─┬──> người xem
-                                                          ├──> người xem
-                                                          └──> người xem
-   ↑                                                   ↑
-   không có đường nào khác                      edge Tokyo chết thì
-                                                chuyển sang edge Seoul
-```
-
-Từ CDN xuống người xem có **rất nhiều đường**. Một edge chết thì người xem được đẩy sang edge khác, họ còn không biết là vừa có sự cố.
-
-Nhưng từ điện thoại người phát lên ingest chỉ có **đúng một đường** — cái 4G hoặc wifi của họ. Không có đường thứ hai.
-
-Và quan trọng nhất: **lúc đó video chưa tồn tại ở bất kỳ đâu khác trên đời.** Nó mới chỉ nằm trong cái điện thoại kia. Rớt là mất luôn, không lấy lại được từ đâu cả.
-
-→ Đường đó rớt = cả 2 triệu người ngồi nhìn màn hình đứng.
-
-Tên gọi kiểu chỗ này: **single point of failure** — một điểm mà hỏng nó là hỏng cả hệ thống.
-
-**Vì sao đặt ingest gần người phát thì đỡ:**
-
-Đường càng dài thì đi qua càng nhiều thiết bị trung gian, mỗi cái là một chỗ có thể hỏng.
-
-```
-ingest ở Sài Gòn  →  đi ~10 km
-ingest ở Mỹ       →  đi ~15.000 km, qua cáp quang biển
-```
-
-Đặt ingest gần người phát = **rút ngắn đúng cái đoạn duy nhất không có dự phòng**. Từ ingest trở đi thì đi xa bao nhiêu cũng được, vì chỗ đó đã có nhiều đường thay thế.
-
-### Ý chính 18 — Phá đánh đổi: từ 26 giây xuống 3 giây bằng chunk
-
-Hai chỗ ăn thời gian nhiều nhất đều có chung một nguyên nhân: **mọi thứ tính theo đơn vị "một segment 6 giây"**.
-
-```
-chờ quay đủ 1 segment      6 giây
-buffer trong player       18 giây
-```
-
-Vậy làm cho đơn vị đó nhỏ lại. Segment 6 giây được cắt tiếp thành **chunk**, mỗi chunk ~0,2 giây. Và **gửi chunk đi ngay khi vừa quay xong nó**, không chờ đủ segment.
-
-```
-Cách cũ:
-  quay giây 0 → 6  →  đóng gói cả cục  →  gửi
-  (phải chờ đủ 6 giây mới có gì để gửi)
-
-Cách mới:
-  quay 0,2 giây  →  gửi ngay
-  quay 0,2 giây  →  gửi ngay
-  ...
-```
-
-Player cũng không cần giữ 3 segment nữa, chỉ giữ vài chunk (~1 giây).
-
-```
-chờ 1 chunk          0,2 giây
-đẩy lên ingest       0,3
-transcode            1,0
-chạy qua cây CDN     0,5
-buffer trong player  1,0
-                    ─────
-                    ~3 giây
-```
-
-Tên gọi: **LL-HLS** (*Low-Latency HLS*). Cách cũ tên là **HLS**.
-
-### Ý chính 19 — Ba cái giá của LL-HLS
-
-**Giá 1 — Số request tăng 30 lần.**
-
-```
-HLS:     2.000.000 ÷ 6      ≈    333.000 request/giây
-LL-HLS:  2.000.000 ÷ 0,2    ≈ 10.000.000 request/giây
-```
-
-Vẫn từng đó bytes video, nhưng bị chẻ thành gấp 30 lần số lần hỏi. CDN tính tiền và chịu tải theo **cả số byte lẫn số request**.
-
-**Giá 2 — Buffer mỏng thì dễ giật.** Đánh đổi không biến mất, chỉ bị đẩy sang phía khác.
-
-```
-HLS:     buffer 18 giây  →  internet khựng 5 giây, bạn không hay biết
-LL-HLS:  buffer  1 giây  →  internet khựng 5 giây, ĐỨNG HÌNH
-```
-
-Bồn nước nhỏ lại thì nước mới hơn, nhưng cúp nước một cái là hết ngay.
-
-**Giá 3 — Phải cả hệ thống cùng hỗ trợ.** Player, CDN, origin — thiếu một mắt xích là không chạy.
-
-**Chọn cái nào:**
-
-| Tình huống | Chọn | Vì |
-|---|---|---|
-| Bán hàng, đấu giá, gaming, chủ live đọc comment | **LL-HLS** | Trễ 26 giây là hỏng trải nghiệm |
-| Concert, xem một chiều, không tương tác | **HLS** | Rẻ hơn, mượt hơn, trễ chút không sao |
-
-### Ý chính 20 — Chunk vẫn cache được, và vì sao đó là chỗ khôn nhất
-
-Mỗi chunk **vẫn có URL riêng**:
-
-```
-/live/abc/seg-041.part-1.mp4
-/live/abc/seg-041.part-2.mp4
-```
-
-Có URL nghĩa là có cái tên để tra — đúng điều kiện ở **ý chính 8**. Nên toàn bộ cây CDN vẫn hoạt động y như cũ, không phải sửa gì.
-
-→ Người ta **cố tình không phát minh giao thức mới**. Chỉ cắt file nhỏ hơn, để cả thế giới CDN đang có sẵn vẫn dùng được.
-
-### Ý chính 21 — WebRTC: nhanh hơn nữa nhưng bỏ luôn mô hình file
-
-WebRTC cho latency dưới 1 giây, nhưng quay lại kiểu **ống mở** — không file, không URL, không cache được. Đúng tình huống gRPC ở ý chính 8.
-
-Không cache được nghĩa là mỗi người xem phải được phục vụ riêng, cần mạng server chuyên dụng chứ không xài CDN thường.
+**5.8 — WebRTC: dưới 1 giây nhưng bỏ luôn mô hình file.**
 
 | | HLS | LL-HLS | WebRTC |
 |---|---|---|---|
-| Đơn vị gửi | segment 6s | chunk 0,2s | dòng liên tục |
-| Có URL? | Có | Có | **Không** |
-| Cache được? | Được | Được | **Không** |
-| Latency | 20–30 giây | 2–3 giây | dưới 1 giây |
-| Chi phí mỗi người xem | Rẻ nhất | Rẻ | **Đắt nhất** |
-| Lên được hàng triệu người? | Được | Được | Rất khó |
-
-**WebRTC dùng cho dự án gì:**
-
-| Loại | Ví dụ |
-|---|---|
-| Gọi video / họp online | Google Meet, Discord. Đây là mục đích gốc. |
-| Cloud gaming | GeForce Now, Xbox Cloud. Bấm nút xong màn hình phải đổi ngay. |
-| Casino live dealer | Bạn đặt cược, người chia bài chia. Trễ 5 giây là gian lận được. |
-| Đấu giá trực tuyến | Trả giá theo thời gian thực. |
-| Camera an ninh, drone | Vừa nhìn vừa bẻ lái. |
-
-Quy luật phân biệt:
+| Có URL / cache được? | Có | Có | **Không** |
+| Latency | 20–30s | 2–3s | dưới 1s |
+| Chi phí mỗi viewer | Rẻ nhất | Rẻ | **Đắt nhất** |
 
 ```
-Bạn chỉ NGỒI XEM                      →  HLS / LL-HLS
-Bạn phải PHẢN ỨNG lại cái đang thấy   →  WebRTC
+Bạn chỉ NGỒI XEM                     →  HLS / LL-HLS
+Bạn phải PHẢN ỨNG lại cái đang thấy  →  WebRTC
 ```
 
-Livestream một chiều, video call hai chiều. Dùng WebRTC cho livestream 2 triệu người là **xài sai mục đích thiết kế** — chạy được nhưng tốn kinh khủng.
+Dùng cho: video call, cloud gaming, casino live dealer, đấu giá, điều khiển drone.
 
-> **Quy luật xuyên suốt phần này:** muốn latency thấp thì phải trả bằng tiền, bằng độ mượt, hoặc cả hai. Không có bữa trưa miễn phí.
+> **Quy luật:** muốn latency thấp thì trả bằng tiền, bằng độ mượt, hoặc cả hai.
 
 ---
 
-## Còn nợ, buổi sau học tiếp
+# 6. Comment
 
-- [ ] **Comment fan-out** — chỗ thật sự chết. 2 tỷ tin nhắn/giây, sampling, local echo
-- [ ] Đếm xấp xỉ — con số người xem là số ước lượng (HyperLogLog)
-- [ ] Hot path vs money path — comment được mất, tiền thì không
-- [ ] Thang giảm cấp khi quá tải
-- [ ] Latency: vì sao chủ live đọc comment trễ 5 giây (buffer trade-off)
-- [ ] **Comment fan-out** — chỗ thật sự chết, sampling + local echo
-- [ ] Đếm xấp xỉ — con số người xem là số ước lượng
-- [ ] Hot path vs money path — comment được mất, tiền thì không
-- [ ] Thang giảm cấp khi quá tải
+**6.1 — Video là one-to-many, comment là many-to-many.** Video chỉ có một người tạo data và ai cũng nhận thứ giống hệt. Comment thì **mỗi viewer vừa là nguồn vừa là đích**.
+
+**6.2 — Vấn đề không phải người ta gõ nhiều, mà là FAN-OUT RATIO.**
+
+```
+nhắn 1 người bạn        →  gõ 1 câu  →  gửi đi          1 bản
+nhắn group 5 người      →  gõ 1 câu  →  gửi đi          5 bản
+comment live 2 triệu    →  gõ 1 câu  →  gửi đi  2.000.000 bản
+```
+
+Nhân lên: `1.000 người gõ/giây × 2.000.000 = 2 tỷ delivery/giây`. Không thể.
+
+> **Từ vựng:** 2 tỷ là số **delivery** (mỗi bản copy tới một máy), không phải số comment — comment chỉ có 1.000/giây. Cũng không phải **request**: request là client hỏi server, đây là server đẩy xuống client.
+
+Ngược lại, **giữ 2 triệu persistent connection KHÔNG phải phần khó** — một server tune tốt giữ được vài trăm nghìn connection. Cái chết là số delivery, không phải số connection.
+
+**6.3 — Sampling: bỏ bớt requirement thay vì tìm máy mạnh hơn.**
+
+```
+Trước:  1.000 comment × 2.000.000 viewer  =  2.000.000.000 delivery/giây
+Sau:       20 comment × 2.000.000 viewer  =     40.000.000 delivery/giây
+```
+
+Giảm 50 lần. Và bỏ 980 comment kia **không mất gì** — mắt người không đọc nổi hơn ~20 comment/giây.
+→ *Bài học lớn nhất: requirement bất khả thi thì quay lại hỏi "cái này có thật sự cần không?", đừng đi tìm máy mạnh hơn.*
+
+**6.4 — Hệ quả: mỗi viewer thấy một ô chat khác nhau.** 20 cái sample cho bạn khác 20 cái sample cho người bên cạnh. Ẩn dụ **sân vận động 2 triệu người cùng hét** — bạn hét một câu, chỉ vài người quanh bạn nghe.
+
+**6.5 — Local echo: vì sao comment của mình luôn hiện.** Xác suất được sample chỉ ~2%, nhưng lần nào cũng thấy, vì có hai nhánh độc lập:
+
+```
+bấm gửi ├──→ client TỰ RENDER lên màn hình ngay   (không hỏi server)
+        └──→ gửi lên server → vào pool chung → may thì được sample
+```
+
+Trong frontend gọi là **optimistic update** — cùng pattern với nút like đổi màu ngay lúc bấm.
+
+> **Comment của bạn hiện lên không chứng minh được gì hết.** Không chứng minh server nhận, không chứng minh viewer khác thấy, không chứng minh streamer đọc. Chỉ chứng minh client của bạn đã tự render nó ra.
+
+**6.6 — Batching: giảm số LẦN gửi, không giảm số comment.** Gom 20 comment trong 1 giây thành **một batch**, gửi một lần.
+
+```
+Trước:  20 comment × 2.000.000 viewer  =  40.000.000 lần gửi/giây
+Sau:     1 batch   × 2.000.000 viewer  =   2.000.000 lần gửi/giây
+```
+
+Số byte gần như không đổi, nhưng số *lần gửi* giảm 20 lần. Mỗi lần gửi có overhead riêng (packet, syscall) — với tin bé xíu thì overhead mới là thứ tốn.
+Ẩn dụ: 20 đơn hàng cùng một địa chỉ, giao 1 chuyến thay vì 20 chuyến.
+
+**6.7 — Fan-out on read: biến comment thành thứ cache được.** Batch là file có nội dung cố định → có URL (`/live/abc/comments/batch-0847.json`) → cache được → cả cây CDN phát được.
+
+```
+Fan-out on WRITE:  server đẩy riêng cho từng viewer   →  2.000.000 lần gửi/giây
+Fan-out on READ:   viewer tự pull, CDN cache          →       ~50 request/giây
+```
+
+→ *Chat từ chỗ đắt nhất hệ thống tụt xuống rẻ ngang video.*
+
+**Nhưng sampling và cache chửi nhau:** sampling muốn mỗi viewer nhận thứ khác nhau, cache chỉ chạy khi mọi người nhận giống hệt nhau. Hệ thống **hy sinh sampling cá nhân hoá** — một batch chung duy nhất cho tất cả.
+
+> Ẩn dụ **tờ báo**: mỗi giây in **một tờ** chứa 20 comment mới nhất, photo ra 2 triệu bản phát cho tất cả. Không ai có tờ riêng. In 1 tờ photo 2 triệu bản thì rẻ; viết 2 triệu tờ khác nhau thì không làm nổi.
+
+→ *Đính chính 6.4: hai viewer cùng khu vực thật ra thấy **gần như giống nhau**. Khác nhau chỉ ở local echo, lệch region, và kênh riêng (6.8).*
+
+**6.8 — Hai kênh: tờ báo chung và thư riêng.** Vài thứ bắt buộc chỉ tới một người (streamer reply đích danh, xác nhận trừ xu khi tặng quà, mod cấm chat).
+
+| | Kênh chung (tờ báo) | Kênh riêng (thư) |
+|---|---|---|
+| Chạy bằng gì | File có URL qua CDN — **giống hệt video** | WebSocket giữ mở tới từng người |
+| Lượng | To: 20 comment/giây | Nhỏ: vài tin/phút |
+| Cache được? | Được | Không |
+
+Phân loại chỉ bằng một câu hỏi: **thứ này ai cần thấy?** Cả phòng → báo chung. Một mình bạn → thư riêng.
+
+> **Nguyên tắc:** đường nào **TO** thì làm cho nó copy được. Đường nào **không copy được** thì làm cho nó **NHỎ**.
+>
+> **Nguyên tắc lớn hơn:** một tính năng người dùng thấy là "một", bên dưới có thể là nhiều hệ thống tách rời — **tách theo đặc tính của data, không tách theo giao diện**. (Phần 8 là nguyên tắc này lần nữa, tách giữa comment và tiền.)
+
+**6.9 — Sơ đồ tổng, ba lane.** Video và comment chung **không dùng chung server, nhưng DÙNG CHUNG CDN**.
+
+```
+LANE 1 — VIDEO
+  streamer ──► INGEST ──► TRANSCODE ──► ORIGIN video ──┐
+                                                        │
+LANE 2 — COMMENT CHUNG (tờ báo)                         │
+  viewer gõ ──► CHAT SERVICE ──► gom batch ──► ORIGIN comment ──┐
+                (lọc, chọn 20)   mỗi giây 1 file                │
+                                                        ▼       ▼
+                                        ┌───────────────────────────────┐
+                                        │   CDN — DÙNG CHUNG            │
+                                        │   regional tier → edge        │
+                                        └───────────────┬───────────────┘
+                                                        │  viewer PULL về
+                                                        ▼
+                                                    ┌────────┐
+                                                    │ VIEWER │
+                                                    └────────┘
+                                                        ▲
+LANE 3 — COMMENT RIÊNG (thư)                            │
+  reply, xác nhận quà, mod ──► GATEWAY WebSocket ───────┘
+                                    KHÔNG qua CDN
+```
+
+- Lane 1 + 2 đổ vào **cùng một cây CDN**. Với cây đó, `seg-041.ts` và `batch-0847.json` chỉ là hai file có URL.
+- Lane 3 **đi vòng qua CDN**, cắm thẳng vào viewer.
+- **CHAT SERVICE** là thứ video không có — nơi sampling và batching xảy ra.
+
+> **Đáng nhớ:** cây CDN là **hạ tầng dùng chung, không phải "đồ của video"**. Bất cứ thứ gì nhét được vào file có URL thì đều nhờ nó phát giùm được. Fan-out on read đắt giá vì nó biến comment thành dạng cache được, chỉ để **dùng ké cái cây đã có sẵn**.
+
+---
+
+## Chưa học
+
+- [ ] **7** — Đếm xấp xỉ, con số viewer là số ước lượng (HyperLogLog)
+- [ ] **8** — Hot path vs money path: comment được mất, tiền thì không
+- [ ] **9** — Graceful degradation: thang giảm cấp khi overload
